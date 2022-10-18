@@ -36,6 +36,7 @@ SimulationResult run_simulations(vector <double> &load, vector <double> &solar, 
 		int chunk_start = rand() % max(solar.size(),load.size());
 		int chunk_end = chunk_start + t_chunk_size;
 
+//ANAIS: should I modify load her?
 		vector <SimulationResult> sr = simulate(load, solar, chunk_start, chunk_end, 0);
 		results.push_back(sr);
 
