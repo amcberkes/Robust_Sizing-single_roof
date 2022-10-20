@@ -24,19 +24,21 @@ SimulationResult run_simulations(vector <double> &load, vector <double> &solar, 
 
 	// set random seed to a specific value if you want consistency in results
 	srand(10);
-
-	// get number of timeslots in each chunk
+	//chunk_size is  number of days in each sample
+	// T_u = 1.0; // this is the time unit, representing the number of hours in each time slot of the load and solar traces
+	//  get number of timeslots in each chunk = number of hours
 	int t_chunk_size = chunk_size*(24/T_u);
 
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
+	// for each data sample, run the simulation
 	for (int chunk_num = 0; chunk_num < number_of_chunks; chunk_num += 1) {
 
 		int chunk_start = rand() % max(solar.size(),load.size());
 		int chunk_end = chunk_start + t_chunk_size;
 
-//ANAIS: should I modify load her?
+
 		vector <SimulationResult> sr = simulate(load, solar, chunk_start, chunk_end, 0);
 		results.push_back(sr);
 
