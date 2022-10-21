@@ -32,9 +32,10 @@ SimulationResult run_simulations(vector <double> &load, vector <double> &solar, 
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
-	// for each data sample, run the simulation
+	// for each data sample, run the simulation (number of chunks is ñ, the number of scenarios and hence sizing curves you get)
 	for (int chunk_num = 0; chunk_num < number_of_chunks; chunk_num += 1) {
 
+//sample random startpoint for this scenario
 		int chunk_start = rand() % max(solar.size(),load.size());
 		int chunk_end = chunk_start + t_chunk_size;
 
