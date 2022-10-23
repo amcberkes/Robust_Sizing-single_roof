@@ -38,15 +38,15 @@ double calc_max_charging(double power, double b_prev, bool ev) {
 		
 
 		//upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept;
-		cout << "upper_lim = " << upper_lim << endl;
+		//cout << "upper_lim = " << upper_lim << endl;
 		
 		double b = b_prev + c*eta_c*T_u;
-		cout << "b = " << b << endl;
+		//cout << "b = " << b << endl;
 		if (b <= upper_lim) {
-			cout << "GOOD : upper_lim > b " << endl;
+			//cout << "GOOD : upper_lim > b " << endl;
 			return c;
 		}else {
-			cout << "BAD upper_lim < b " << endl;
+			//cout << "BAD upper_lim < b " << endl;
 		}
 	}
 	return 0;
@@ -96,6 +96,8 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	int index_t_load;
 	
 	bool ev = false;
+	// ev_b says how much the battery in ev is charged
+	double ev_b = 0.0;
 	for (int t = start_index; t < end_index; t++) {
 		//cout << "current index" << t << endl;
 		// wrap around to the start of the trace if we hit the end.
@@ -119,9 +121,8 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		//How does ev_b vary with the time ? 
 		int tt = t %24;
 		
-		// ev_b says how much the battery in ev is charged
-		double ev_b = 0.0;
-		cout << "time = " << tt << endl;
+		
+		//cout << "time = " << tt << endl;
 		switch(tt){
 			case 0:
 				ev_b = 12;
@@ -228,21 +229,21 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		// max_c is the max amount that we can charge b
 		//!!!! b here is the current total battery charged (sum of charged in b and ev_b)
 		//cout << "ev_b = " << ev_b << endl;
-		cout << "b before update = " << b << endl;
+		//cout << "b before update = " << b << endl;
 		
 		// DIESE LINE IST FALSCH 
 		double b_new = b + ev_b;
 		
-		cout << "b after update = " << b << endl;
+		//cout << "b after update = " << b << endl;
 		max_c = fmin(calc_max_charging(c,b_new, ev), alpha_c);
-		cout << "c = " << c << endl;
-		cout << "max_c = " << max_c << endl;
+		//cout << "c = " << c << endl;
+		//cout << "max_c = " << max_c << endl;
 		// alpha_d = alpha_cs
 		// max_d is max amount that we can decharge
 		
 		max_d = fmin(calc_max_discharging(d,b), alpha_d);
-		cout << "d = " << d << endl;
-		cout << "max_d = " << max_d << endl;
+		//cout << "d = " << d << endl;
+		//cout << "max_d = " << max_d << endl;
 
 		// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
 		b = b + max_c*eta_c*T_u - max_d*eta_d*T_u ;
