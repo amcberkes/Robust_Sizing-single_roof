@@ -22,15 +22,31 @@ void update_parameters(double n) {
 
 // decrease the applied (charging) power by increments of (1/30) until the power is 
 // low enough to avoid violating the upper energy limit constraint.
-double calc_max_charging(double power, double b_prev) {
+double calc_max_charging(double power, double b_prev, bool ev) {
 
 	double step = power/30.0;
 
 	for (double c = power; c >= 0; c -= step) {
-		double upper_lim = a2_slope*(c/nominal_voltage_c) + a2_intercept;
+		double upper_lim = 0.0;
+		
+		if(ev){
+			//theoretisches upper limit
+			 upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept + 18;
+		}else{
+			 upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept ;
+		}
+		
+
+		//upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept;
+		cout << "upper_lim = " << upper_lim << endl;
+		
 		double b = b_prev + c*eta_c*T_u;
+		cout << "b = " << b << endl;
 		if (b <= upper_lim) {
+			cout << "GOOD : upper_lim > b " << endl;
 			return c;
+		}else {
+			cout << "BAD upper_lim < b " << endl;
 		}
 	}
 	return 0;
@@ -78,8 +94,10 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	double max_d = 0.0;
 	int index_t_solar;
 	int index_t_load;
+	
+	bool ev = false;
 	for (int t = start_index; t < end_index; t++) {
-
+		//cout << "current index" << t << endl;
 		// wrap around to the start of the trace if we hit the end.
 		index_t_solar = t % trace_length_solar;
 		index_t_load = t % trace_length_load;
@@ -87,15 +105,148 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		load_sum += load_trace[index_t_load];
 
 		// first, calculate how much power is available for charging, and how much is needed to discharge
-		c = fmax(solar_trace[index_t_solar]*pv - load_trace[index_t_load],0);
-		d = fmax(load_trace[index_t_load] - solar_trace[index_t_solar]*pv, 0);
+		//c = how much power is available to charge battery
+		if (t % 24 == 23 || t % 24 == 0 || t % 24 == 1 || t % 24 == 2 || t % 24 == 3 || t % 24 == 4 || t % 24 == 5 || t % 24 == 6)
+		{
+			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load] - 1, 0);
+			// d = how much energy we need to take out of battery
+			d = fmax(load_trace[index_t_load] + 1 - solar_trace[index_t_solar] * pv, 0);
+		} else {
+			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load], 0);
+			// d = how much energy we need to take out of battery
+			d = fmax(load_trace[index_t_load] - solar_trace[index_t_solar] * pv, 0);
+		}
+		//How does ev_b vary with the time ? 
+		int tt = t %24;
+		
+		// ev_b says how much the battery in ev is charged
+		double ev_b = 0.0;
+		cout << "time = " << tt << endl;
+		switch(tt){
+			case 0:
+				ev_b = 12;
+				ev = true;
+				break;
+			case 1:
+				ev_b = 13;
+				ev = true;
+				break;
+			case 2:
+				ev_b = 14;
+				ev = true;
+				break;
+			case 3:
+				ev_b = 15;
+				ev = true;
+				break;
+			case 4:
+				ev_b = 16;
+				ev = true;
+				break;
+			case 5:
+				ev_b = 17;
+				ev = true;
+				break;
+			case 6:
+				ev_b = 18;
+				ev = true;
+				break;
+			case 7:
+				ev_b = 18;
+				ev = true;
+				break;
+			case 8:
+				ev_b = 18;
+				ev = true;
+				break;
+			case 9:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 10:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 11:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 12:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 13:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 14:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 15:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 16:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 17:
+				ev_b = 0;
+				ev = false;
+				break;
+			case 18:
+				ev_b = 10;
+				ev = true;
+				break;
+			case 19:
+				ev_b = 10;
+				ev = true;
+				break;
+			case 20:
+				ev_b = 10;
+				ev = true;
+				break;
+			case 21:
+				ev_b = 10;
+				ev = true;
+				break;
+			case 22:
+				ev_b = 10;
+				ev = true;
+				break;
+			case 23:
+				ev_b = 11;
+				ev = true;
+				break;
+		}
+
+
 
 		// constrain the power
-		max_c = fmin(calc_max_charging(c,b), alpha_c);
+		// alpha_c = kWh_in_one_cell*num_cells = max solar power generated
+		// max_c is the max amount that we can charge b
+		//!!!! b here is the current total battery charged (sum of charged in b and ev_b)
+		//cout << "ev_b = " << ev_b << endl;
+		cout << "b before update = " << b << endl;
+		
+		// DIESE LINE IST FALSCH 
+		double b_new = b + ev_b;
+		
+		cout << "b after update = " << b << endl;
+		max_c = fmin(calc_max_charging(c,b_new, ev), alpha_c);
+		cout << "c = " << c << endl;
+		cout << "max_c = " << max_c << endl;
+		// alpha_d = alpha_cs
+		// max_d is max amount that we can decharge
+		
 		max_d = fmin(calc_max_discharging(d,b), alpha_d);
+		cout << "d = " << d << endl;
+		cout << "max_d = " << max_d << endl;
 
-		b = b + max_c*eta_c*T_u - max_d*eta_d*T_u;
-
+		// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
+		b = b + max_c*eta_c*T_u - max_d*eta_d*T_u ;
+		//b = b - ev_b;
 		// if we didnt get to discharge as much as we wanted, there is a loss
 		if (max_d < d) {
 			loss_events += 1;
