@@ -11,11 +11,13 @@ void update_parameters(double n) {
 
 	num_cells = n;
 
+//lower energy content limit
 	a1_intercept = 0.0*num_cells;
-	
+//upper energy content limit
 	a2_intercept = kWh_in_one_cell*num_cells;
-	
+//max discharging rate	
 	alpha_d = a2_intercept*1.0;
+// max charging rate
 	alpha_c = a2_intercept*1.0;
 	return;
 }
@@ -31,6 +33,7 @@ double calc_max_charging(double power, double b_prev, bool ev) {
 		
 		if(ev){
 			//theoretisches upper limit
+			//nominal voltage is the theoretically assigned voltage
 			 upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept + 18;
 		}else{
 			 upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept ;
@@ -39,7 +42,7 @@ double calc_max_charging(double power, double b_prev, bool ev) {
 
 		//upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept;
 		//cout << "upper_lim = " << upper_lim << endl;
-		
+		//eta_c is the charging penalty
 		double b = b_prev + c*eta_c*T_u;
 		//cout << "b = " << b << endl;
 		if (b <= upper_lim) {
