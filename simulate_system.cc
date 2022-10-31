@@ -22,6 +22,23 @@ void update_parameters(double n) {
 	return;
 }
 
+//update params for ev
+void update_parameters_ev(double n)
+{
+
+	num_cells_ev = n;
+
+	// lower energy content limit
+	a1_intercept_ev = 0.0 * num_cells_ev;
+	// upper energy content limit
+	a2_intercept_ev = kWh_in_one_cell_ev * num_cells_ev;
+	// max discharging rate
+	alpha_d_ev = a2_intercept_ev * 1.0;
+	// max charging rate
+	alpha_c_ev = a2_intercept_ev * 1.0;
+	return;
+}
+
 // decrease the applied (charging) power by increments of (1/30) until the power is 
 // low enough to avoid violating the upper energy limit constraint.
 double calc_max_charging(double power, double b_prev, bool ev) {
@@ -72,6 +89,63 @@ double calc_max_discharging(double power, double b_prev) {
 	return 0;
 }
 
+
+//max charging function for ev battery
+double calc_max_charging_ev(double power, double b_prev, bool ev)
+{
+
+	double step = power / 30.0;
+
+	for (double c = power; c >= 0; c -= step)
+	{
+		double upper_lim = 0.0;
+
+		if (ev)
+		{
+			// theoretisches upper limit
+			// nominal voltage is the theoretically assigned voltage
+			upper_lim = a2_slope_ev * (c / nominal_voltage_c_ev) + a2_intercept_ev + 18;
+		}
+		else
+		{
+			upper_lim = a2_slope_ev * (c / nominal_voltage_c_ev) + a2_intercept_ev;
+		}
+
+		// eta_c is the charging penalty
+		double b = b_prev + c * eta_c_ev * T_u;
+		// cout << "b = " << b << endl;
+		if (b <= upper_lim)
+		{
+			// cout << "GOOD : upper_lim > b " << endl;
+			return c;
+		}
+		else
+		{
+			// cout << "BAD upper_lim < b " << endl;
+		}
+	}
+	return 0;
+}
+
+//max discharging for ev battery
+//need to add separate params for ev battery 
+//call functions below 
+double calc_max_discharging_ev(double power, double b_prev)
+{
+
+	double step = power / 30.0;
+
+	for (double d = power; d >= 0; d -= step)
+	{
+		double lower_lim = a1_slope_ev * (d / nominal_voltage_d_ev) + a1_intercept_ev;
+		double b = b_prev - d * eta_d_ev * T_u;
+		if (b >= lower_lim)
+		{
+			return d;
+		}
+	}
+	return 0;
+}
 
 // Note: sim_year calls procedures calc_max_charging and calc_max_discharging.
 // You could potentially speed up the computation by expanding these functions into sim_year
