@@ -41,23 +41,13 @@ void update_parameters_ev(double n)
 
 // decrease the applied (charging) power by increments of (1/30) until the power is 
 // low enough to avoid violating the upper energy limit constraint.
-double calc_max_charging(double power, double b_prev, bool ev) {
+double calc_max_charging(double power, double b_prev) {
 
 	double step = power/30.0;
 
 	for (double c = power; c >= 0; c -= step) {
-		double upper_lim = 0.0;
-		
-		if(ev){
-			//theoretisches upper limit
-			//nominal voltage is the theoretically assigned voltage
-			 upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept + 18;
-		}else{
-			 upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept ;
-		}
-		
-
-		//upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept;
+		double upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept ;
+	
 		//cout << "upper_lim = " << upper_lim << endl;
 		//eta_c is the charging penalty
 		double b = b_prev + c*eta_c*T_u;
@@ -172,7 +162,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	int index_t_solar;
 	int index_t_load;
 	
-	bool ev = false;
+	bool ev = true;
 	// ev_b says how much the battery in ev is charged
 	double ev_b = 0.0;
 	for (int t = start_index; t < end_index; t++) {
@@ -312,7 +302,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		double b_new = b + ev_b;
 		
 		//cout << "b after update = " << b << endl;
-		max_c = fmin(calc_max_charging(c,b_new, ev), alpha_c);
+		max_c = fmin(calc_max_charging(c,b), alpha_c);
 		//cout << "c = " << c << endl;
 		//cout << "max_c = " << max_c << endl;
 		// alpha_d = alpha_cs
@@ -322,14 +312,54 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		//cout << "d = " << d << endl;
 		//cout << "max_d = " << max_d << endl;
 
-		// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
-		b = b + max_c*eta_c*T_u - max_d*eta_d*T_u ;
-		//b = b - ev_b;
-		// if we didnt get to discharge as much as we wanted, there is a loss
-		if (max_d < d) {
-			loss_events += 1;
-			load_deficit += (d - max_d);
+		//differenet charging policies here
+		//prioritize stationary battery first 
+		bool stat_prioritized = true;
+		if(ev){
+			double max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev), alpha_c_ev);
+			double max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
+			if(stat_prioritized){
+				if(c > max_c){
+					double rest_c = c - max_c;
+					//we generated more charge than we can store in stationary battery and will store the excess charge in the ev
+					if(rest_c < max_c_ev){
+						ev_b = ev_b + rest_c * eta_c_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}else{
+						ev_b = ev_b + max_c * eta_c_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+				} else if(max_d < d){
+					// we need to discharge the ev battery
+					double rest_d = d - max_d;
+					
+					if (rest_d < max_d_ev){
+						loss_events += 1;
+						load_deficit += (max_d_ev - rest_d);
+						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}else{
+						ev_b = ev_b - rest_d * eta_d_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+				}
+				else {
+					b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+				}
+			}
+
+		} else {
+			// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
+			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+			// b = b - ev_b;
+			//  if we didnt get to discharge as much as we wanted, there is a loss
+			if (max_d < d)
+			{
+				loss_events += 1;
+				load_deficit += (d - max_d);
+			}
 		}
+
 	}
 
 	if (metric == 0) {
