@@ -23,8 +23,8 @@ void update_parameters(double n) {
 }
 
 //update params for ev
-void update_parameters_ev(double n){
-	num_cells_ev = n;
+void update_parameters_ev(){
+	num_cells_ev = 192;
 	// lower energy content limit
 	a1_intercept_ev = 0.0 * num_cells_ev;
 	// upper energy content limit
@@ -44,16 +44,9 @@ double calc_max_charging(double power, double b_prev) {
 
 	for (double c = power; c >= 0; c -= step) {
 		double upper_lim = a2_slope * (c / nominal_voltage_c) + a2_intercept ;
-	
-		//cout << "upper_lim = " << upper_lim << endl;
-		//eta_c is the charging penalty
 		double b = b_prev + c*eta_c*T_u;
-		//cout << "b = " << b << endl;
 		if (b <= upper_lim) {
-			//cout << "GOOD : upper_lim > b " << endl;
 			return c;
-		}else {
-			//cout << "BAD upper_lim < b " << endl;
 		}
 	}
 	return 0;
@@ -86,10 +79,6 @@ double calc_max_charging_ev(double power, double b_prev, bool ev){
 		if (b <= upper_lim){
 			return c;
 		}
-		else
-		{
-			// cout << "BAD upper_lim < b " << endl;
-		}
 	}
 	return 0;
 }
@@ -113,6 +102,7 @@ double calc_max_discharging_ev(double power, double b_prev){
 double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_index, int end_index, double cells, double pv, double b_0) {
 
 	update_parameters(cells);
+	update_parameters_ev();
 
 	// set the battery
 	double b = b_0*cells*kWh_in_one_cell; //0.5*a2_intercept
@@ -153,14 +143,13 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	}*/
 	
 	for (int t = start_index; t < end_index; t++) {
-		//cout << "current index" << t << endl;
 		// wrap around to the start of the trace if we hit the end.
 		index_t_solar = t % trace_length_solar;
 		index_t_load = t % trace_length_load;
 
 		load_sum += load_trace[index_t_load];
 		int tt = t % 24;
-		cout << "time: " << tt << endl;
+		//cout << "time: " << tt << endl;
 		if(arr_time[tt] == true){
 			ev = true;
 			//cout << "time = " << tt << endl;
@@ -174,79 +163,87 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		if (tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
 			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load] - 1, 0);
 			d = fmax(load_trace[index_t_load] + 1 - solar_trace[index_t_solar] * pv, 0);
-			cout << "ev_b before increase: " << ev_b << endl;
+		//cout << "ev_b before increase: " << ev_b << endl;
 			// charge the ev battery by 1 kwh
-			ev_b = ev_b + 1;
-			cout << "ev_b after increase: " << ev_b << endl;
+		double max_c_ev = fmin(calc_max_charging_ev(1, ev_b, ev), alpha_c_ev);
+		ev_b = ev_b + max_c_ev;
+		//cout << "ev_b after increase: " << ev_b << endl;
 		} else {
 			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load], 0);
 			d = fmax(load_trace[index_t_load] - solar_trace[index_t_solar] * pv, 0);
 		}
-		cout << "c: " << c << endl;
-		cout << "d: " << d << endl;
-		cout << "ev_b: " << ev_b << endl;
-		cout << "b: " << b << endl;
+		//cout << "c: " << c << endl;
+		//cout << "d: " << d << endl;
+		//cout << "ev_b: " << ev_b << endl;
+		//cout << "b: " << b << endl;
 
 		// alpha_c = kWh_in_one_cell*num_cells = max solar power generated
 		max_c = fmin(calc_max_charging(c,b), alpha_c);
 		max_d = fmin(calc_max_discharging(d,b), alpha_d);
 
-		cout << "max_c: " << max_c << endl;
-		cout << "max_d: " << max_d << endl;
+		//cout << "max_c: " << max_c << endl;
+		//cout << "max_d: " << max_d << endl;
 
 		//differenet charging policies here
 		bool stat_prioritized = true;
 		if (tt == 18 || tt == 19 || tt == 20 || tt == 21 || tt == 22 || tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6 || tt == 7 || tt == 8)
 		{
-			cout << "ev = true with time: " << tt << endl;
+			//cout << "ev = true with time: " << tt << endl;
 			double max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev), alpha_c_ev);
 			double max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
 			if(stat_prioritized){
 				if(c > max_c){
 					
 					double rest_c = c - max_c;
-					cout << "charge ev with: " << rest_c << endl;
+					//cout << "charge ev with: " << rest_c << endl;
 					//we generated more charge than we can store in stationary battery and will store the excess charge in the ev
 					if(rest_c < max_c_ev){
 						ev_b = ev_b + rest_c * eta_c_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 					}else{
-						ev_b = ev_b + max_c * eta_c_ev * T_u;
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 					}
 				} else if(max_d < d){
 					// we need to discharge the ev battery
 					double rest_d = d - max_d;
-					cout << "discharge ev with: " << rest_d << endl;
-					cout << "ev_b before discharge with: " << ev_b << endl;
-					cout << "b before evb discharge with: " << b << endl;
+					//cout << "discharge ev with: " << rest_d << endl;
+					//cout << "ev_b before discharge with: " << ev_b << endl;
+					//cout << "b before evb discharge with: " << b << endl;
 					if (rest_d > max_d_ev){
 						loss_events += 1;
 						load_deficit += (rest_d - max_d_ev);
 						
 						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+						//cout << "ev_b after not full discharge: " << ev_b << endl;
 					}else{
-						cout << "rest_d_ev before discharge: " << rest_d << endl;
+						//cout << "rest_d_ev before discharge: " << rest_d << endl;
 						ev_b = ev_b - rest_d * eta_d_ev * T_u;
+						//cout << "ev_b after  full discharge: " << ev_b << endl;
+
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 					}
 				}
 				else {
-					cout << "ev not needed, b before =  " << b << endl;
+					//cout << "ev not needed, b before =  " << b << endl;
+					//cout << "only update stationary storage - before: " << b << endl;
+
 					b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-					cout << "ev not needed, b after =  " << b << endl;
+					//cout << "only update stationary storage - after: " << b << endl;
+
+					//cout << "ev not needed, b after =  " << b << endl;
 				}
 			}
 		}
 		else
 		{
-			cout << "ev = false with time: " << tt << endl;
+			//cout << "ev = false with time: " << tt << endl;
 
 			// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
-			cout << "b before update: " << b << endl;
+			//cout << "b before update: " << b << endl;
 			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-			cout << "b after update: " << b << endl;
+			//cout << "b after update: " << b << endl;
 			//  if we didnt get to discharge as much as we wanted, there is a loss
 			if (max_d < d){
 				loss_events += 1;
