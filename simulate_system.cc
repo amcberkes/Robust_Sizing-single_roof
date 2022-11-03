@@ -185,12 +185,26 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		//cout << "max_d: " << max_d << endl;
 
 		//differenet charging policies here
-		bool stat_prioritized = true;
-		if (tt == 18 || tt == 19 || tt == 20 || tt == 21 || tt == 22 || tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6 || tt == 7 || tt == 8)
-		{
+		bool stat_prioritized = false;
+		bool ev_prioritized = false;
+		bool round_robin = false;
+		//store charge in ev when it is there and discharge battery
+		bool c_ev_d_b = true;
+		if (tt == 18 || tt == 19 || tt == 20 || tt == 21 || tt == 22 || tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6 || tt == 7 || tt == 8){
 			//cout << "ev = true with time: " << tt << endl;
 			double max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev), alpha_c_ev);
 			double max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
+			if(round_robin){
+				stat_prioritized = false;
+				ev_prioritized = false;
+				if (tt % 2 == 0){
+					stat_prioritized = true;
+				}
+				else
+				{
+					ev_prioritized = true;
+				}
+			}
 			if(stat_prioritized){
 				if(c > max_c){
 					
@@ -235,11 +249,120 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 					//cout << "ev not needed, b after =  " << b << endl;
 				}
 			}
-		}
-		else
-		{
-			//cout << "ev = false with time: " << tt << endl;
+			if(ev_prioritized){
+				// cannot store charge in ev as it is already full
+				if (c > max_c_ev){
 
+					double rest_c = c - max_c_ev;
+					// cout << "charge ev with: " << rest_c << endl;
+					// we generated more charge than we can store in stationary battery and will store the excess charge in the ev
+					//can fully charge stationary with the rest
+					if (rest_c < max_c){
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						b = b + rest_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+					//some charge is lost
+					else{
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+				}
+				// cannot discharge ev, as it is empty
+				else if (max_d_ev < d)
+				{
+					// we need to discharge the ev battery
+					double rest_d = d - max_d_ev;
+					// cout << "discharge ev with: " << rest_d << endl;
+					// cout << "ev_b before discharge with: " << ev_b << endl;
+					// cout << "b before evb discharge with: " << b << endl;
+					//cannot fully discharge stationary eother
+					if (rest_d > max_d){
+						loss_events += 1;
+						load_deficit += (rest_d - max_d);
+
+						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+						// cout << "ev_b after not full discharge: " << ev_b << endl;
+					}
+					else{
+						// cout << "rest_d_ev before discharge: " << rest_d << endl;
+						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
+						// cout << "ev_b after  full discharge: " << ev_b << endl;
+
+						b = b + max_c * eta_c * T_u - rest_d * eta_d * T_u;
+					}
+				}
+				// only use ev
+				else{
+					// cout << "ev not needed, b before =  " << b << endl;
+					// cout << "only update stationary storage - before: " << b << endl;
+					ev_b = ev_b + max_c_ev * eta_c * T_u - max_d_ev * eta_d * T_u;
+					// cout << "only update stationary storage - after: " << b << endl;
+
+					// cout << "ev not needed, b after =  " << b << endl;
+				}
+			}
+			if(c_ev_d_b){
+				// cannot store charge in ev as it is already full
+				if (c > max_c_ev)
+				{
+
+					double rest_c = c - max_c_ev;
+					// cout << "charge ev with: " << rest_c << endl;
+					// we generated more charge than we can store in stationary battery and will store the excess charge in the ev
+					// can fully charge stationary with the rest
+					if (rest_c < max_c)
+					{
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						b = b + rest_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+					// some charge is lost
+					else
+					{
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+				}
+				// cannot discharge b, as it is empty
+				else if (max_d < d)
+				{
+					// we need to discharge the ev battery
+					double rest_d = d - max_d;
+					// cout << "discharge ev with: " << rest_d << endl;
+					// cout << "ev_b before discharge with: " << ev_b << endl;
+					// cout << "b before evb discharge with: " << b << endl;
+					if (rest_d > max_d_ev)
+					{
+						loss_events += 1;
+						load_deficit += (rest_d - max_d_ev);
+
+						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+						// cout << "ev_b after not full discharge: " << ev_b << endl;
+					}
+					else
+					{
+						// cout << "rest_d_ev before discharge: " << rest_d << endl;
+						ev_b = ev_b - rest_d * eta_d_ev * T_u;
+						// cout << "ev_b after  full discharge: " << ev_b << endl;
+
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+				}
+				// only use ev
+				else
+				{
+					// cout << "ev not needed, b before =  " << b << endl;
+					// cout << "only update stationary storage - before: " << b << endl;
+					ev_b = ev_b + max_c_ev * eta_c * T_u;
+					b = b  - max_d * eta_d * T_u;
+					// cout << "only update stationary storage - after: " << b << endl;
+
+					// cout << "ev not needed, b after =  " << b << endl;
+				}
+			}
+		}else{
+			//cout << "ev = false with time: " << tt << endl;
 			// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
 			//cout << "b before update: " << b << endl;
 			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
@@ -343,9 +466,6 @@ vector <SimulationResult> simulate(vector <double> &load_trace, vector <double> 
 
 
 
-// now I have modeled that ev battery can be used as backup when stationary battery is full or empty
-
-
 
 /*still need to model that ev is fully charged when it leaves : muss load part verändern 
 	- 7h für eine volle ladung 
@@ -356,7 +476,5 @@ vector <SimulationResult> simulate(vector <double> &load_trace, vector <double> 
 
 
 // and need to model stochastic arrival and departure time 
-
-// then add other operating policies 
 
 // then add flexible initial ev battery state and load schedule 
