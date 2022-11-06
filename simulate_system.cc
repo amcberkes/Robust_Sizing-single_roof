@@ -150,11 +150,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		load_sum += load_trace[index_t_load];
 		int tt = t % 24;
 		//cout << "time: " << tt << endl;
-		if(arr_time[tt] == true){
-			ev = true;
-			//cout << "time = " << tt << endl;
-			//cout << "ev_-b = " << ev_b << endl;
-		}
+	
 		
 		if(tt == arrival_time){
 			ev_b = 19.5;
@@ -184,7 +180,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		//cout << "max_c: " << max_c << endl;
 		//cout << "max_d: " << max_d << endl;
 
-		//differenet charging policies here
+		//different charging policies here
 		bool stat_prioritized = false;
 		bool ev_prioritized = false;
 		bool round_robin = false;
@@ -477,4 +473,18 @@ vector <SimulationResult> simulate(vector <double> &load_trace, vector <double> 
 
 // and need to model stochastic arrival and departure time 
 
-// then add flexible initial ev battery state and load schedule 
+// then add flexible initial ev battery state and load schedule
+
+/*
+Priority of improvements:
+
+- stochastic arrival and departure time
+- better charging schedule
+- variable batterie stand when you arrive
+- lifestyle changes
+- more sophisticated operating policy
+- variable battery models
+- Maybe add loss metric for battery level of ev: how fully charged does it have to be when you leave the house ?
+
+
+*/
