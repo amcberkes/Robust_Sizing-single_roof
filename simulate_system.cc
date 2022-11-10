@@ -2,6 +2,10 @@
 #include <iostream>
 #include <vector>
 #include "simulate_system.h"
+#include <random>
+#include <iostream>
+#include <cstdlib>
+#include <ctime> // For time()
 
 using namespace std;
 
@@ -121,27 +125,41 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	double max_d = 0.0;
 	int index_t_solar;
 	int index_t_load;
-	
+
 	bool ev = false;
 	double ev_b = 19.5;
 	int arrival_time = 18;
 	int departure_time = 9;
-	int time_length = arrival_time - departure_time;
-	bool arr_time[time_length] ;
-	double ev_b_state = 0.5;
 
-/*
-	for(int i = 0; i < 24; i++){
-		if (i == 18 || i == 19|| i == 20|| i == 21|| i == 22|| i == 23|| i == 0|| i == 1|| i == 2|| i == 3|| i == 4|| i == 5|| i == 6|| i == 7|| i == 8){
-			arr_time[i] = true;
-			cout << "set to true" << endl;
-		} else {
-			arr_time[i] = false;
-			cout << "set to false" << endl;
+	// generate stochastic arrival time
+	default_random_engine e(18);
+	std::normal_distribution<double> distribution(18.0, 2.0);
+	srand(time(0)); // Initialize random number generator.
+	int index = (rand() % 10) + 1;
+	for (int i = 0; i < 10; i++)
+	{
+		int arr_time = distribution(e);
+		if (i == index)
+		{
+			arrival_time = arr_time;
+			//  cout << "arrival_time: " << arrival_time << endl;
 		}
-		
-	}*/
-	
+	}
+
+	// generate stochastic departure time
+	std::normal_distribution<double> distribution2(9, 1.0);
+	srand(time(0)); // Initialize random number generator.
+	int index2 = (rand() % 10) + 1;
+	for (int i = 0; i < 10; i++)
+	{
+		int dept_time = distribution2(e);
+		if (i == index2)
+		{
+			departure_time = dept_time;
+			// cout << "departure_time: " << departure_time << endl;
+		}
+	}
+
 	for (int t = start_index; t < end_index; t++) {
 		// wrap around to the start of the trace if we hit the end.
 		index_t_solar = t % trace_length_solar;
@@ -150,21 +168,34 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		load_sum += load_trace[index_t_load];
 		int tt = t % 24;
 		//cout << "time: " << tt << endl;
-	
-		
-		if(tt == arrival_time){
+
+		if (tt == arrival_time)
+		{
 			ev_b = 19.5;
 		}
+		if (tt == departure_time)
+		{
+			// cout << "ev_b before departure: " << ev_b << endl;
+			ev_b = 0;
+		}
+		if (tt >= arrival_time || tt < 4)
+		{
+			ev = true;
+		}
+		else
+		{
+			ev = false;
+		}
 
-		if (tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
-			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load] - 1, 0);
-			d = fmax(load_trace[index_t_load] + 1 - solar_trace[index_t_solar] * pv, 0);
-		//cout << "ev_b before increase: " << ev_b << endl;
-			// charge the ev battery by 1 kwh
-		double max_c_ev = fmin(calc_max_charging_ev(1, ev_b, ev), alpha_c_ev);
-		ev_b = ev_b + max_c_ev;
-		//cout << "ev_b after increase: " << ev_b << endl;
-		} else {
+		if (tt == 1 || tt == 2 || tt == 3 || tt == 4)
+		{
+			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load] - 6.6, 0);
+			d = fmax(load_trace[index_t_load] + 6.6 - solar_trace[index_t_solar] * pv, 0);
+			double max_c_ev = fmin(calc_max_charging_ev(6.6, ev_b, ev), alpha_c_ev);
+			ev_b = ev_b + max_c_ev;
+		}
+		else
+		{
 			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load], 0);
 			d = fmax(load_trace[index_t_load] - solar_trace[index_t_solar] * pv, 0);
 		}
@@ -185,15 +216,31 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		bool ev_prioritized = false;
 		bool round_robin = false;
 		//store charge in ev when it is there and discharge battery
-		bool c_ev_d_b = true;
-		if (tt == 18 || tt == 19 || tt == 20 || tt == 21 || tt == 22 || tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6 || tt == 7 || tt == 8){
-			//cout << "ev = true with time: " << tt << endl;
+		bool c_ev_d_b = false;
+		bool c_ev_d_b_only = false;
+
+		if (c > 0)
+		{
+			c_ev_d_b = true;
+		}
+		else
+		{
+			c_ev_d_b_only = true;
+		}
+
+		if (ev)
+		{
+			// cout << "inside ev true blcok" << endl;
+			// cout << "ev = true with time: " << tt << endl;
 			double max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev), alpha_c_ev);
 			double max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
-			if(round_robin){
+			if (round_robin)
+			{
+				// cout << "inside round robin block " << endl;
 				stat_prioritized = false;
 				ev_prioritized = false;
-				if (tt % 2 == 0){
+				if (tt % 2 == 0)
+				{
 					stat_prioritized = true;
 				}
 				else
@@ -201,64 +248,79 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 					ev_prioritized = true;
 				}
 			}
-			if(stat_prioritized){
-				if(c > max_c){
-					
+			if (stat_prioritized)
+			{
+				if (c > max_c)
+				{
+
 					double rest_c = c - max_c;
-					//cout << "charge ev with: " << rest_c << endl;
-					//we generated more charge than we can store in stationary battery and will store the excess charge in the ev
-					if(rest_c < max_c_ev){
+					// cout << "charge ev with: " << rest_c << endl;
+					// we generated more charge than we can store in stationary battery and will store the excess charge in the ev
+					if (rest_c < max_c_ev)
+					{
 						ev_b = ev_b + rest_c * eta_c_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-					}else{
+					}
+					else
+					{
 						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 					}
-				} else if(max_d < d){
+				}
+				else if (max_d < d)
+				{
 					// we need to discharge the ev battery
 					double rest_d = d - max_d;
-					//cout << "discharge ev with: " << rest_d << endl;
-					//cout << "ev_b before discharge with: " << ev_b << endl;
-					//cout << "b before evb discharge with: " << b << endl;
-					if (rest_d > max_d_ev){
+					// cout << "discharge ev with: " << rest_d << endl;
+					// cout << "ev_b before discharge with: " << ev_b << endl;
+					// cout << "b before evb discharge with: " << b << endl;
+					if (rest_d > max_d_ev)
+					{
 						loss_events += 1;
 						load_deficit += (rest_d - max_d_ev);
-						
+
 						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-						//cout << "ev_b after not full discharge: " << ev_b << endl;
-					}else{
-						//cout << "rest_d_ev before discharge: " << rest_d << endl;
+						// cout << "ev_b after not full discharge: " << ev_b << endl;
+					}
+					else
+					{
+						// cout << "rest_d_ev before discharge: " << rest_d << endl;
 						ev_b = ev_b - rest_d * eta_d_ev * T_u;
-						//cout << "ev_b after  full discharge: " << ev_b << endl;
+						// cout << "ev_b after  full discharge: " << ev_b << endl;
 
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 					}
 				}
-				else {
-					//cout << "ev not needed, b before =  " << b << endl;
-					//cout << "only update stationary storage - before: " << b << endl;
+				else
+				{
+					// cout << "ev not needed, b before =  " << b << endl;
+					// cout << "only update stationary storage - before: " << b << endl;
 
 					b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-					//cout << "only update stationary storage - after: " << b << endl;
+					// cout << "only update stationary storage - after: " << b << endl;
 
-					//cout << "ev not needed, b after =  " << b << endl;
+					//  cout << "ev not needed, b after =  " << b << endl;
 				}
 			}
-			if(ev_prioritized){
+			if (ev_prioritized)
+			{
 				// cannot store charge in ev as it is already full
-				if (c > max_c_ev){
+				if (c > max_c_ev)
+				{
 
 					double rest_c = c - max_c_ev;
 					// cout << "charge ev with: " << rest_c << endl;
 					// we generated more charge than we can store in stationary battery and will store the excess charge in the ev
-					//can fully charge stationary with the rest
-					if (rest_c < max_c){
+					// can fully charge stationary with the rest
+					if (rest_c < max_c)
+					{
 						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
 						b = b + rest_c * eta_c * T_u - max_d * eta_d * T_u;
 					}
-					//some charge is lost
-					else{
+					// some charge is lost
+					else
+					{
 						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 					}
@@ -271,8 +333,9 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 					// cout << "discharge ev with: " << rest_d << endl;
 					// cout << "ev_b before discharge with: " << ev_b << endl;
 					// cout << "b before evb discharge with: " << b << endl;
-					//cannot fully discharge stationary eother
-					if (rest_d > max_d){
+					// cannot fully discharge stationary eother
+					if (rest_d > max_d)
+					{
 						loss_events += 1;
 						load_deficit += (rest_d - max_d);
 
@@ -280,7 +343,8 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 						// cout << "ev_b after not full discharge: " << ev_b << endl;
 					}
-					else{
+					else
+					{
 						// cout << "rest_d_ev before discharge: " << rest_d << endl;
 						ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
 						// cout << "ev_b after  full discharge: " << ev_b << endl;
@@ -289,7 +353,8 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 					}
 				}
 				// only use ev
-				else{
+				else
+				{
 					// cout << "ev not needed, b before =  " << b << endl;
 					// cout << "only update stationary storage - before: " << b << endl;
 					ev_b = ev_b + max_c_ev * eta_c * T_u - max_d_ev * eta_d * T_u;
@@ -298,7 +363,56 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 					// cout << "ev not needed, b after =  " << b << endl;
 				}
 			}
-			if(c_ev_d_b){
+			if (c_ev_d_b_only)
+			{
+				// cannot store charge in ev as it is already full
+				if (c > max_c_ev)
+				{
+
+					double rest_c = c - max_c_ev;
+					// cout << "charge ev with: " << rest_c << endl;
+					// we generated more charge than we can store in stationary battery and will store the excess charge in the ev
+					// can fully charge stationary with the rest
+					if (rest_c < max_c)
+					{
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						b = b + rest_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+					// some charge is lost
+					else
+					{
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+					}
+				}
+				// cannot discharge b, as it is empty
+				else if (max_d < d)
+				{
+					// we need to discharge the ev battery
+					double rest_d = d - max_d;
+					// cout << "discharge ev with: " << rest_d << endl;
+					// cout << "ev_b before discharge with: " << ev_b << endl;
+					// cout << "b before evb discharge with: " << b << endl;
+
+					loss_events += 1;
+					load_deficit += (rest_d - max_d_ev);
+
+					b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+				}
+				// only use ev
+				else
+				{
+					// cout << "ev not needed, b before =  " << b << endl;
+					// cout << "only update stationary storage - before: " << b << endl;
+					ev_b = ev_b + max_c_ev * eta_c * T_u;
+					b = b - max_d * eta_d * T_u;
+					// cout << "only update stationary storage - after: " << b << endl;
+
+					// cout << "ev not needed, b after =  " << b << endl;
+				}
+			}
+			if (c_ev_d_b)
+			{
 				// cannot store charge in ev as it is already full
 				if (c > max_c_ev)
 				{
@@ -351,13 +465,15 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 					// cout << "ev not needed, b before =  " << b << endl;
 					// cout << "only update stationary storage - before: " << b << endl;
 					ev_b = ev_b + max_c_ev * eta_c * T_u;
-					b = b  - max_d * eta_d * T_u;
+					b = b - max_d * eta_d * T_u;
 					// cout << "only update stationary storage - after: " << b << endl;
 
 					// cout << "ev not needed, b after =  " << b << endl;
 				}
 			}
-		}else{
+		}
+		else
+		{
 			//cout << "ev = false with time: " << tt << endl;
 			// at each time step either c or d is 0, which is why either max_c or max_d is 0 and it works out
 			//cout << "b before update: " << b << endl;
@@ -378,6 +494,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		// metric == 1, eue
 		return load_deficit/(load_sum*1.0);
 	}
+	
 }
 
 
