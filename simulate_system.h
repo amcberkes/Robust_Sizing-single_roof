@@ -19,15 +19,15 @@ double static eta_c = 0.9942;
 double static alpha_d = a2_intercept*1.0; // the 1 indicates the maximum discharging C-rate
 double static alpha_c = a2_intercept*1.0; // the 1 indicates the maximum charging C-rate
 
-double static num_cells_ev = 192.0; // just a default value that will be updated every time we check a new battery size
+double static num_cells_ev = 305.0; // just a default value that will be updated every time we check a new battery size
 double static nominal_voltage_c_ev = 3.65;
 double static nominal_voltage_d_ev = 3.65;
 double static a1_slope_ev = 0.1920;
 double static a2_slope_ev = -0.4865;
 double static a1_intercept_ev = 0.0 * num_cells_ev;
 double static a2_intercept_ev = kWh_in_one_cell_ev * num_cells_ev;
-double static eta_d_ev = 1 / 0.87; // taking reciprocal so that we don't divide by eta_d when updating the battery energy content
-double static eta_c_ev = 0.87;
+double static eta_d_ev = 0.935; // taking reciprocal so that we don't divide by eta_d when updating the battery energy content
+double static eta_c_ev = 0.935;
 double static alpha_d_ev = 6.6; // the 1 indicates the maximum discharging C-rate
 double static alpha_c_ev = 6.6; // the 1 indicates the maximum charging C-rate
 

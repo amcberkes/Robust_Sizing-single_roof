@@ -171,14 +171,14 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 
 		if (tt == arrival_time)
 		{
-			ev_b = 19.5;
+			ev_b = 49.6;
 		}
 		if (tt == departure_time)
 		{
 			// cout << "ev_b before departure: " << ev_b << endl;
 			ev_b = 0;
 		}
-		if (tt >= arrival_time || tt < 4)
+		if (tt >= arrival_time || tt < 3)
 		{
 			ev = true;
 		}
@@ -187,7 +187,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 			ev = false;
 		}
 
-		if (tt == 1 || tt == 2 || tt == 3 || tt == 4)
+		if (tt == 1 || tt == 2 )
 		{
 			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load] - 6.6, 0);
 			d = fmax(load_trace[index_t_load] + 6.6 - solar_trace[index_t_solar] * pv, 0);
@@ -217,8 +217,8 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		bool round_robin = false;
 		//store charge in ev when it is there and discharge battery
 		bool c_ev_d_b = false;
-		bool c_ev_d_b_only = false;
-
+		bool c_ev_d_b_only = true;
+/*
 		if (c > 0)
 		{
 			c_ev_d_b = true;
@@ -227,7 +227,8 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		{
 			c_ev_d_b_only = true;
 		}
-
+		ev = false;
+		*/
 		if (ev)
 		{
 			// cout << "inside ev true blcok" << endl;

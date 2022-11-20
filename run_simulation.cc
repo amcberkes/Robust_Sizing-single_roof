@@ -37,6 +37,7 @@ SimulationResult run_simulations(vector <double> &load, vector <double> &solar, 
 		int chunk_end = chunk_start + t_chunk_size;
 
 		vector <SimulationResult> sr = simulate(load, solar, chunk_start, chunk_end, 0);
+		//each sr is a sizing curve that I want to print in the graph 
 		results.push_back(sr);
 
 	}

@@ -143,9 +143,9 @@ def run_plot(constant_labels, input_labels, save_dir=None):
 
 constant_labels = {
     'binary': './bin/debug/sim',
-    'pv_cost': 2000,
-    'battery_cost': 500,
-    'metric': 1,
+    'pv_cost': 1876,
+    'battery_cost': 437,
+    'metric': 0,
     'conf': 0.95,
     'n_days': 100,
     'load_file': 'example_inputs/load.txt',
@@ -156,7 +156,7 @@ constant_labels = {
     # 'pv_file': 'example_inputs/seattle_pv.txt',
 }
 
-save_dir = 'analytics/macbook'
+save_dir = 'analytics/cev_db'
 # save_dir = 'analytics/new_dheli_macbook'
 # save_dir = 'analytics/seattle_macbook'
 

@@ -1,0 +1,13 @@
+inv_PV_string = 1876, PV_inv = 1876
+inv_B_string = 437, B_inv = 4.93111
+pv_max_string = 70, pv_max = 70, pv_min = 0, pv_step = 0.2
+cells_max_string = 225, cells_max = 19939.7, cells_min = 0, cells_step = 49.8493
+metric_string = 0, metric = 0
+epsilon_string = 0.01, epsilon = 0.01
+confidence_string = 0.95, confidence = 0.95
+days_in_chunk_string = 100, days_in_chunk = 100
+loadfile = example_inputs/load.txt
+reading load file
+checking for errors in load file...
+solarfile = example_inputs/pv.txt
+checking for errors in solar file...
