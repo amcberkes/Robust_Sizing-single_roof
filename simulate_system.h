@@ -19,7 +19,7 @@ double static eta_c = 0.9942;
 double static alpha_d = a2_intercept*1.0; // the 1 indicates the maximum discharging C-rate
 double static alpha_c = a2_intercept*1.0; // the 1 indicates the maximum charging C-rate
 
-double static num_cells_ev = 305.0; // just a default value that will be updated every time we check a new battery size
+double static num_cells_ev = 3051.0; // just a default value that will be updated every time we check a new battery size
 double static nominal_voltage_c_ev = 3.65;
 double static nominal_voltage_d_ev = 3.65;
 double static a1_slope_ev = 0.1920;

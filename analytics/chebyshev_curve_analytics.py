@@ -148,32 +148,52 @@ constant_labels = {
     'metric': 0,
     'conf': 0.95,
     'n_days': 100,
-    'load_file': 'example_inputs/load.txt',
-    'pv_file': 'example_inputs/pv.txt',
+    'load_file': 'example_inputs/seattle_load.txt',
+    'pv_file': 'example_inputs/seattle_pv.txt',
     # 'load_file': 'example_inputs/new_dheli_load.txt',
     # 'pv_file': 'example_inputs/new_dheli_pv.txt',
     # 'load_file': 'example_inputs/seattle_load.txt',
     # 'pv_file': 'example_inputs/seattle_pv.txt',
 }
 
-save_dir = 'analytics/cev_db'
+save_dir = 'analytics/seattle_cevdb'
 # save_dir = 'analytics/new_dheli_macbook'
 # save_dir = 'analytics/seattle_macbook'
 
-for epsilon in [0.01, 0.05, 0.1, 0.25, 0.5, 0.75]:
+""""
+for epsilon in [ 0.8, 0.9, 0.7]:
     input_labels = {
-        'pv_max': 70,
-        'cell_max': 225,
+        'pv_max': 10,
+        'cell_max': 20,
         'epsilon': epsilon,
     }
     run_plot(constant_labels, input_labels, save_dir)
+"""
     
-
-for pv_max, cell_max in [(10, 20), (100, 300), (150, 300), (150, 500), (1000, 2000)]:
+"""
+for pv_max, cell_max in [(10, 20), (50, 50), (70, 305), (100, 500), (150, 2000)]:
     input_labels = {
         'pv_max': pv_max,
         'cell_max': cell_max,
-        'epsilon': 0.05,
+        'epsilon': 0.8,
+    }
+    run_plot(constant_labels, input_labels, save_dir)
+    """
+""""
+for pv_max in [10, 15, 20]:
+    input_labels = {
+        'pv_max': pv_max,
+        'cell_max': 20,
+        'epsilon': 0.9,
+    }
+    run_plot(constant_labels, input_labels, save_dir)
+   """ 
+
+for cell_max in [5, 10, 15]:
+    input_labels = {
+        'pv_max': 10,
+        'cell_max': cell_max,
+        'epsilon': 0.9,
     }
     run_plot(constant_labels, input_labels, save_dir)
 
