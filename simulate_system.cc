@@ -127,7 +127,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	int index_t_load;
 
 	bool ev = false;
-	double ev_b = 19.5;
+	double ev_b = 62.0;
 	int arrival_time = 18;
 	int departure_time = 9;
 
@@ -186,19 +186,78 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		{
 			ev = false;
 		}
+		bool new_person = true;
+		bool heat_pump = true;
+		bool second_ev = false;
+		double coef = 1.0;
+		double coef_ev = 1.0;
+		double hp_load = 0.0;
 
+		if(new_person){
+			coef = 1.125;
+		}
+		if (second_ev){
+			coef_ev = 2;
+		}
+		if(heat_pump){
+			if (tt == 0 || tt == 1 || tt == 2 ||tt == 3 || tt == 4 || tt == 5)
+			{
+				hp_load = 0.6;
+			}
+			if (tt == 5)
+			{
+				hp_load = 0.8;
+			}
+			if (tt == 6)
+			{
+				hp_load = 1.0;
+			}
+			if (tt == 7)
+			{
+				hp_load = 1.2;
+			}
+			if (tt == 8)
+			{
+				hp_load = 1.0;
+			}
+			if (tt == 9 || tt == 10 || tt == 11 || tt == 12 || tt == 13 || tt == 14 ||tt == 15)
+			{
+				hp_load = 0.9;
+			}
+			if (tt == 16 || tt == 17)
+			{
+				hp_load = 1.0;
+			}
+			if (tt == 18 || tt == 19 || tt == 20)
+			{
+				hp_load = 0.9;
+			}
+			if (tt == 21) 
+			{
+				hp_load = 0.7;
+			}
+			if (tt == 22 || tt == 23)
+			{
+				hp_load = 0.5;
+			}
+		}
+		double load = load_trace[index_t_load] * coef;
+		double ev_load = coef_ev*6.6;
 		if (tt == 1 || tt == 2 )
 		{
-			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load] - 6.6, 0);
-			d = fmax(load_trace[index_t_load] + 6.6 - solar_trace[index_t_solar] * pv, 0);
+			//charge ev
+			c = fmax(solar_trace[index_t_solar] * pv - load - ev_load - hp_load, 0);
+			d = fmax(load + ev_load + hp_load - solar_trace[index_t_solar] * pv, 0);
 			double max_c_ev = fmin(calc_max_charging_ev(6.6, ev_b, ev), alpha_c_ev);
 			ev_b = ev_b + max_c_ev;
 		}
 		else
 		{
-			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load], 0);
-			d = fmax(load_trace[index_t_load] - solar_trace[index_t_solar] * pv, 0);
+			//dont charge ev
+			c = fmax(solar_trace[index_t_solar] * pv - load - hp_load, 0);
+			d = fmax(load +hp_load - solar_trace[index_t_solar] * pv, 0);
 		}
+		
 		//cout << "c: " << c << endl;
 		//cout << "d: " << d << endl;
 		//cout << "ev_b: " << ev_b << endl;
@@ -216,8 +275,10 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		bool ev_prioritized = false;
 		bool round_robin = false;
 		//store charge in ev when it is there and discharge battery
-		bool c_ev_d_b = false;
-		bool c_ev_d_b_only = true;
+		bool c_ev_d_b = true;
+		//uni-directional ev, just addiotional load 
+		bool c_ev_d_b_only = false;
+	
 /*
 		if (c > 0)
 		{
@@ -589,19 +650,16 @@ vector <SimulationResult> simulate(vector <double> &load_trace, vector <double> 
 */
 
 
-// and need to model stochastic arrival and departure time 
 
 // then add flexible initial ev battery state and load schedule
 
 /*
 Priority of improvements:
 
-- stochastic arrival and departure time
 - better charging schedule
 - variable batterie stand when you arrive
 - lifestyle changes
 - more sophisticated operating policy
-- variable battery models
 - Maybe add loss metric for battery level of ev: how fully charged does it have to be when you leave the house ?
 
 

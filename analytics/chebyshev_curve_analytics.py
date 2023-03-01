@@ -156,19 +156,19 @@ constant_labels = {
     # 'pv_file': 'example_inputs/seattle_pv.txt',
 }
 
-save_dir = 'analytics/seattle_cevdb'
+save_dir = 'analytics/storyline_seattle'
 # save_dir = 'analytics/new_dheli_macbook'
 # save_dir = 'analytics/seattle_macbook'
 
-""""
-for epsilon in [ 0.8, 0.9, 0.7]:
+
+for epsilon in [ 0.5, 0.7, 0.8, 0.9]:
     input_labels = {
         'pv_max': 10,
         'cell_max': 20,
         'epsilon': epsilon,
     }
     run_plot(constant_labels, input_labels, save_dir)
-"""
+
     
 """
 for pv_max, cell_max in [(10, 20), (50, 50), (70, 305), (100, 500), (150, 2000)]:
@@ -189,6 +189,7 @@ for pv_max in [10, 15, 20]:
     run_plot(constant_labels, input_labels, save_dir)
    """ 
 
+""""
 for cell_max in [5, 10, 15]:
     input_labels = {
         'pv_max': 10,
@@ -196,4 +197,4 @@ for cell_max in [5, 10, 15]:
         'epsilon': 0.9,
     }
     run_plot(constant_labels, input_labels, save_dir)
-
+"""
