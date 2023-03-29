@@ -33,8 +33,9 @@ void update_parameters_ev(){
 	a1_intercept_ev = 0.0 * num_cells_ev;
 	// upper energy content limit
 	a2_intercept_ev = kWh_in_one_cell_ev * num_cells_ev;
-	// max discharging rate
-	alpha_d_ev = a2_intercept_ev * 1.0;
+	//a2_intercept_ev = 60;
+		// max discharging rate
+		alpha_d_ev = a2_intercept_ev * 1.0;
 	// max charging rate
 	alpha_c_ev = a2_intercept_ev * 1.0;
 	return;
@@ -131,34 +132,39 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 	int arrival_time = 18;
 	int departure_time = 9;
 
-	// generate stochastic arrival time
-	default_random_engine e(18);
-	std::normal_distribution<double> distribution(18.0, 2.0);
-	srand(time(0)); // Initialize random number generator.
-	int index = (rand() % 10) + 1;
-	for (int i = 0; i < 10; i++)
-	{
-		int arr_time = distribution(e);
-		if (i == index)
+	// generate stochastic arrival time 
+		default_random_engine e(18);
+		std::normal_distribution<double> distribution(18.0, 2.0);
+		srand(time(0)); // Initialize random number generator.
+		int index = (rand() % 10) + 1;
+		for (int i = 0; i < 10; i++)
 		{
-			arrival_time = arr_time;
-			//  cout << "arrival_time: " << arrival_time << endl;
+			int arr_time = distribution(e);
+			if (i == index)
+			{
+				arrival_time = arr_time;
+				//  cout << "arrival_time: " << arrival_time << endl;
+			}
 		}
-	}
-
+	
+	
+	
 	// generate stochastic departure time
-	std::normal_distribution<double> distribution2(9, 1.0);
-	srand(time(0)); // Initialize random number generator.
-	int index2 = (rand() % 10) + 1;
-	for (int i = 0; i < 10; i++)
-	{
-		int dept_time = distribution2(e);
-		if (i == index2)
+
+		std::normal_distribution<double> distribution2(9, 1.0);
+		srand(time(0)); // Initialize random number generator.
+		int index2 = (rand() % 10) + 1;
+		for (int i = 0; i < 10; i++)
 		{
-			departure_time = dept_time;
-			// cout << "departure_time: " << departure_time << endl;
+			int dept_time = distribution2(e);
+			if (i == index2)
+			{
+				departure_time = dept_time;
+				// cout << "departure_time: " << departure_time << endl;
+			}
 		}
-	}
+	
+	
 
 	for (int t = start_index; t < end_index; t++) {
 		// wrap around to the start of the trace if we hit the end.
@@ -167,11 +173,12 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 
 		load_sum += load_trace[index_t_load];
 		int tt = t % 24;
-		//cout << "time: " << tt << endl;
+		cout << "HALLOOOO time: " << tt << endl;
 
 		if (tt == arrival_time)
 		{
-			ev_b = 49.6;
+			// assume that ev arrives 70% charged
+			ev_b = 43.4;
 		}
 		if (tt == departure_time)
 		{
@@ -182,82 +189,56 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		{
 			ev = true;
 		}
-		else
-		{
+		else{
 			ev = false;
 		}
-		bool new_person = true;
-		bool heat_pump = true;
+		bool new_person = false;
+		bool heat_pump = false;
 		bool second_ev = false;
 		double coef = 1.0;
 		double coef_ev = 1.0;
 		double hp_load = 0.0;
 
-		if(new_person){
-			coef = 1.125;
-		}
-		if (second_ev){
-			coef_ev = 2;
-		}
-		if(heat_pump){
-			if (tt == 0 || tt == 1 || tt == 2 ||tt == 3 || tt == 4 || tt == 5)
-			{
-				hp_load = 0.6;
-			}
-			if (tt == 5)
-			{
-				hp_load = 0.8;
-			}
-			if (tt == 6)
-			{
-				hp_load = 1.0;
-			}
-			if (tt == 7)
-			{
-				hp_load = 1.2;
-			}
-			if (tt == 8)
-			{
-				hp_load = 1.0;
-			}
-			if (tt == 9 || tt == 10 || tt == 11 || tt == 12 || tt == 13 || tt == 14 ||tt == 15)
-			{
-				hp_load = 0.9;
-			}
-			if (tt == 16 || tt == 17)
-			{
-				hp_load = 1.0;
-			}
-			if (tt == 18 || tt == 19 || tt == 20)
-			{
-				hp_load = 0.9;
-			}
-			if (tt == 21) 
-			{
-				hp_load = 0.7;
-			}
-			if (tt == 22 || tt == 23)
-			{
-				hp_load = 0.5;
-			}
-		}
+
 		double load = load_trace[index_t_load] * coef;
 		double ev_load = coef_ev*6.6;
-		if (tt == 1 || tt == 2 )
-		{
-			//charge ev
-			c = fmax(solar_trace[index_t_solar] * pv - load - ev_load - hp_load, 0);
-			d = fmax(load + ev_load + hp_load - solar_trace[index_t_solar] * pv, 0);
+
+		// different charging policies here
+		bool stat_prioritized = false;
+		bool ev_prioritized = false;
+		bool round_robin = false;
+		// store charge in ev when it is there and discharge battery
+		bool c_ev_d_b = false;
+		// uni-directional ev, just addiotional load
+		bool c_ev_d_b_only = false;
+
+
+
+		// pink line: ensure that ev is 80% charged when it leaves the house
+		// make sure that it is the time in hours 
+		double pink_line = 6.6*tt;
+		cout << "pink linr time: " << pink_line << endl;
+
+		if(ev_b > pink_line){
+			// we do not need to charge the ev yet. normal bi-directional behaviour
+			ev_prioritized = true;
+			c = fmax(solar_trace[index_t_solar] * pv - load, 0);
+			d = fmax(load - solar_trace[index_t_solar] * pv, 0);
+			
+		}else{
+			// need to charge the ev now. charge it at the max rate and do not discharge it anymore
+			ev = false;
+			c_ev_d_b_only = true;
+			c = fmax(solar_trace[index_t_solar] * pv - load - ev_load, 0);
+			d = fmax(load + ev_load - solar_trace[index_t_solar] * pv, 0);
 			double max_c_ev = fmin(calc_max_charging_ev(6.6, ev_b, ev), alpha_c_ev);
-			ev_b = ev_b + max_c_ev;
-		}
-		else
-		{
-			//dont charge ev
-			c = fmax(solar_trace[index_t_solar] * pv - load - hp_load, 0);
-			d = fmax(load +hp_load - solar_trace[index_t_solar] * pv, 0);
-		}
+			while(ev_b < 49.6){
+				ev_b = ev_b + max_c_ev;
+			}
 		
+		}
+
+
 		//cout << "c: " << c << endl;
 		//cout << "d: " << d << endl;
 		//cout << "ev_b: " << ev_b << endl;
@@ -270,26 +251,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		//cout << "max_c: " << max_c << endl;
 		//cout << "max_d: " << max_d << endl;
 
-		//different charging policies here
-		bool stat_prioritized = false;
-		bool ev_prioritized = false;
-		bool round_robin = false;
-		//store charge in ev when it is there and discharge battery
-		bool c_ev_d_b = true;
-		//uni-directional ev, just addiotional load 
-		bool c_ev_d_b_only = false;
 	
-/*
-		if (c > 0)
-		{
-			c_ev_d_b = true;
-		}
-		else
-		{
-			c_ev_d_b_only = true;
-		}
-		ev = false;
-		*/
 		if (ev)
 		{
 			// cout << "inside ev true blcok" << endl;
