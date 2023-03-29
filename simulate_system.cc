@@ -138,6 +138,40 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		} else {
 			arr_time[i] = false;
 			cout << "set to false" << endl;
+	double ev_battery_size = 40.0;
+	double ev_consumed = 0.15;
+	double ev_b_arrival = ev_battery_size * ev_consumed;
+	double ev_b;
+	int arrival_time = 18;
+	int departure_time = 8;
+
+	// generate stochastic arrival time
+	default_random_engine e(18);
+	std::normal_distribution<double> distribution(18.0, 2.0);
+	srand(time(0)); // Initialize random number generator.
+	int index = (rand() % 10) + 1;
+	for (int i = 0; i < 10; i++)
+	{
+		int arr_time = distribution(e);
+		if (i == index)
+		{
+			arrival_time = arr_time;
+			//  cout << "arrival_time: " << arrival_time << endl;
+		}
+	}
+
+
+	// generate stochastic departure time
+	std::normal_distribution<double> distribution2(9, 1.0);
+	srand(time(0)); // Initialize random number generator.
+	int index2 = (rand() % 10) + 1;
+	for (int i = 0; i < 10; i++)
+	{
+		int dept_time = distribution2(e);
+		if (i == index2)
+		{
+			departure_time = dept_time;
+			// cout << "departure_time: " << departure_time << endl;
 		}
 		
 	}*/
@@ -154,6 +188,116 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		
 		if(tt == arrival_time){
 			ev_b = 19.5;
+
+		// need to have mod counter to account for weekdays 
+		// day 0 is a Monday, day 1 tuesday, day 2 wednesday, day 3 thrusday, day 4 friday, day 5 saturday, day 6 sunday
+		//
+		int day = 0;
+		if(tt == 0){
+			if(day < 6){
+				day = day + 1;
+			}else if(day==6){
+				day = 0;
+			}
+			
+		}
+
+	// 
+	bool evt1 = false;
+	bool evt2 = false;
+	bool evt3 = true;
+	if (evt1)
+	{
+		// ev commutes to work every day except when day is 5 or 6
+		if(day < 5){
+			//weekday
+			//check if ev is present
+				if (tt >= arrival_time && tt < departure_time)
+				{
+					ev = true;
+				}else{
+					ev = false;
+				}
+		}else{
+			// weekend: EV leaves house once a day between 12:00 - 13:00 and consumes 0.15% of charge
+			if (tt==12){
+				ev = false;
+			}else{
+				ev = true;
+			}
+		}
+	}
+	if (evt2)
+	{
+		// ev commutes to work every day except when day is 5 or 6
+		if (day==1 || day==3)
+		{
+			// weekday
+			// check if ev is present
+			if (tt >= arrival_time && tt < departure_time)
+			{
+				ev = true;
+			}
+			else
+			{
+				ev = false;
+			}
+		}
+		else
+		{
+			// weekend: EV leaves house once a day between 12:00 - 13:00 and consumes 0.15% of charge
+			if (tt == 12)
+			{
+				ev = false;
+			}
+			else
+			{
+				ev = true;
+			}
+		}
+	}
+	if (evt3)
+	{
+		
+			// every day: EV leaves house once a day between 12:00 - 13:00 and consumes 0.15% of charge
+			if (tt == 12)
+			{
+				ev = false;
+			}
+			else
+			{
+				ev = true;
+			}
+		
+	}
+
+		if (tt == arrival_time)
+		{
+			ev_b = ev_b_arrival;
+		}
+		if (tt == departure_time)
+		{
+			// cout << "ev_b before departure: " << ev_b << endl;
+			ev_b = 0;
+		}
+		
+		bool new_person = false;
+		bool heat_pump = false;
+		bool second_ev = false;
+		double coef = 1.0;
+		double coef_ev = 1.0;
+		double hp_load = 0.0;
+
+	
+		double load = load_trace[index_t_load] * coef;
+		double ev_load = coef_ev*6.6;
+		if (ev && ev_b <= ev_battery_size)
+		{
+			//charge ev
+			c = fmax(solar_trace[index_t_solar] * pv - load - ev_load - hp_load, 0);
+			d = fmax(load + ev_load + hp_load - solar_trace[index_t_solar] * pv, 0);
+			double max_c_ev = fmin(calc_max_charging_ev(6.6, ev_b, ev), alpha_c_ev);
+			ev_b = ev_b + max_c_ev;
 		}
 
 		if (tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
@@ -168,17 +312,20 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 			c = fmax(solar_trace[index_t_solar] * pv - load_trace[index_t_load], 0);
 			d = fmax(load_trace[index_t_load] - solar_trace[index_t_solar] * pv, 0);
 		}
+<<<<<<< Updated upstream
 		//cout << "c: " << c << endl;
 		//cout << "d: " << d << endl;
 		//cout << "ev_b: " << ev_b << endl;
 		//cout << "b: " << b << endl;
+=======
+		
+		
+>>>>>>> Stashed changes
 
 		// alpha_c = kWh_in_one_cell*num_cells = max solar power generated
 		max_c = fmin(calc_max_charging(c,b), alpha_c);
 		max_d = fmin(calc_max_discharging(d,b), alpha_d);
 
-		//cout << "max_c: " << max_c << endl;
-		//cout << "max_d: " << max_d << endl;
 
 		//different charging policies here
 		bool stat_prioritized = false;
@@ -188,6 +335,14 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		bool c_ev_d_b = true;
 		if (tt == 18 || tt == 19 || tt == 20 || tt == 21 || tt == 22 || tt == 23 || tt == 0 || tt == 1 || tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6 || tt == 7 || tt == 8){
 			//cout << "ev = true with time: " << tt << endl;
+		//uni-directional ev, just addiotional load 
+		bool c_ev_d_b_only = false;
+	
+
+		if (ev)
+		{
+			// cout << "inside ev true blcok" << endl;
+			// cout << "ev = true with time: " << tt << endl;
 			double max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev), alpha_c_ev);
 			double max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
 			if(round_robin){
