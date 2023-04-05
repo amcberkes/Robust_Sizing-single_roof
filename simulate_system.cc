@@ -134,7 +134,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 
 	// generate stochastic arrival time 
 		default_random_engine e(18);
-		std::normal_distribution<double> distribution(18.0, 2.0);
+		std::normal_distribution<double> distribution(18.0, 1.0);
 		srand(time(0)); // Initialize random number generator.
 		int index = (rand() % 10) + 1;
 		for (int i = 0; i < 10; i++)
@@ -173,15 +173,74 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 
 		load_sum += load_trace[index_t_load];
 		int tt = t % 24;
-		cout << "HALLOOOO time: " << tt << endl;
+		//cout << "HALLOOOO time: " << tt << endl;
 
-		if (tt == arrival_time)
-		{
-			// assume that ev arrives 70% charged
-			ev_b = 43.4;
+	bool wf1 = true;
+	bool wf2 = false;
+	bool wf3 = false;
+
+	int day = 0;
+	if(tt == 0){
+		day++;
+	}
+
+	if(wf3){
+		// work from home every day 
+		if( tt == 15){
+			ev = false;
+		}else if(tt == 16){
+			ev = true;
+			ev_b = 47.0;
+		}else{
+			ev = true;
 		}
+	}else if(wf2){
+		//work from home 2 days of the week 
+	
+		if(day%7 == 2 || day%7 == 4){
+			// work from home
+			if (tt == 15)
+			{
+				ev = false;
+			}
+			else if (tt == 16)
+			{
+				ev = true;
+				ev_b = 47.0;
+			}
+			else
+			{
+				ev = true;
+			}
+		}else{
+			if (tt == arrival_time)
+			{
+				// assume that ev arrives 70% charged
+				ev_b = 43.4;
+			}
+			if (tt == departure_time)
+			{
+				// cout << "ev_b before departure: " << ev_b << endl;
+				ev_b = 0;
+			}
+			if (tt >= arrival_time || tt < 3)
+			{
+				ev = true;
+			}
+			else
+			{
+				ev = false;
+			}
+		}
+
+	}else{
+		if (tt == arrival_time)
+			{
+				// assume that ev arrives 70% charged
+				ev_b = 43.4;
+			}
 		if (tt == departure_time)
-		{
+			{
 			// cout << "ev_b before departure: " << ev_b << endl;
 			ev_b = 0;
 		}
@@ -191,7 +250,16 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		}
 		else{
 			ev = false;
-		}
+		}	
+	}
+		
+
+
+
+
+
+
+
 		bool new_person = false;
 		bool heat_pump = false;
 		bool second_ev = false;
@@ -217,7 +285,7 @@ double sim(vector <double> &load_trace, vector <double> &solar_trace, int start_
 		// pink line: ensure that ev is 80% charged when it leaves the house
 		// make sure that it is the time in hours 
 		double pink_line = 6.6*tt;
-		cout << "pink linr time: " << pink_line << endl;
+		//cout << "pink linr time: " << pink_line << endl;
 
 		if(ev_b > pink_line){
 			// we do not need to charge the ev yet. normal bi-directional behaviour

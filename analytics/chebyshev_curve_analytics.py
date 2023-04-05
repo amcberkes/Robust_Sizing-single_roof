@@ -148,20 +148,20 @@ constant_labels = {
     'metric': 0,
     'conf': 0.95,
     'n_days': 100,
-    'load_file': 'example_inputs/seattle_load.txt',
-    'pv_file': 'example_inputs/seattle_pv.txt',
+    'load_file': 'example_inputs/new_dheli_load.txt',
+    'pv_file': 'example_inputs/new_dheli_pv.txt',
     # 'load_file': 'example_inputs/new_dheli_load.txt',
     # 'pv_file': 'example_inputs/new_dheli_pv.txt',
     # 'load_file': 'example_inputs/seattle_load.txt',
     # 'pv_file': 'example_inputs/seattle_pv.txt',
 }
 
-save_dir = 'analytics/storyline_seattle'
+save_dir = 'analytics/3wfh_t1'
 # save_dir = 'analytics/new_dheli_macbook'
 # save_dir = 'analytics/seattle_macbook'
 
 
-for epsilon in [ 0.5, 0.7, 0.8, 0.9]:
+for epsilon in [ 0.5]:
     input_labels = {
         'pv_max': 10,
         'cell_max': 20,
