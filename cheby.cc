@@ -192,6 +192,7 @@ SimulationResult calculate_sample_bound(vector < vector <SimulationResult> > &si
 	double lowest_B;
 	double lowest_C;
 
+//find the lowest cost sizing on the upper bound of the chebyshev vurves
 	for (double B_val = 0.0; B_val <= cells_max * kWh_in_one_cell; B_val += cells_step * kWh_in_one_cell) {
 
 		double C1 = interpolate(cheby_on_B[1], cheby_on_B[0], B_val, false);

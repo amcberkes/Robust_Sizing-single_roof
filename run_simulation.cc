@@ -20,7 +20,9 @@ using namespace std;
 // metric: 0 for LOLP, 1 for unmet load
 // epsilon: number in range [0,1] representing LOLP or unmet load fraction.
 // chunk_size: length of time (in days)
-SimulationResult run_simulations(vector <double> &load, vector <double> &solar, int metric, int chunk_size, int number_of_chunks) {
+// this function will be called at the bottom of the file
+SimulationResult run_simulations(vector<double> &load, vector<double> &solar, vector<double> &ev,  int metric, int chunk_size, int number_of_chunks)
+{
 
 	// set random seed to a specific value if you want consistency in results
 	srand(10);
@@ -28,19 +30,40 @@ SimulationResult run_simulations(vector <double> &load, vector <double> &solar, 
 	// get number of timeslots in each chunk
 	int t_chunk_size = chunk_size*(24/T_u);
 
+	// vector of vectors : vector of all sizing results 
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
-	for (int chunk_num = 0; chunk_num < number_of_chunks; chunk_num += 1) {
+	// number_of_chunks = 100
+	//TODO: uncomment line below, just for debugging
+	//for (int chunk_num = 0; chunk_num < number_of_chunks; chunk_num += 1) {
+		for (int chunk_num = 0; chunk_num < 100; chunk_num += 1)
+		{
+			cout << "-------------chunk number = " << chunk_num << endl;
 
-		int chunk_start = rand() % max(solar.size(),load.size());
-		int chunk_end = chunk_start + t_chunk_size;
+			// random hour of random day
+			int chunk_start_f = rand() % max(solar.size(), load.size());
 
-		vector <SimulationResult> sr = simulate(load, solar, chunk_start, chunk_end, 0);
-		//each sr is a sizing curve that I want to print in the graph 
-		results.push_back(sr);
+			// get the weekday
+			int one_week = 168;
+			int hour_day_sampled = chunk_start_f % one_week;
+			int chunk_start = chunk_start_f - hour_day_sampled + one_week;
+			int chunk_end = chunk_start + t_chunk_size;
 
-	}
+			// cout << "chunk start = " << chunk_start << endl;
+			vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
+
+			for (int i = 0; i < sr.size(); i++)
+			{
+				SimulationResult s = sr.at(i);
+				 cout << "simulation result B " << s.B << endl;
+				 cout << "simulation result C " << s.C << endl;
+				 cout << "simulation result Cost " << s.cost << endl;
+			}
+
+			// each sr is a sizing curve that I want to print in the graph
+			results.push_back(sr);
+		}
 
 #ifdef DEBUG
 	// print all of the curves
@@ -63,18 +86,19 @@ int main(int argc, char ** argv) {
 	
 	int input_process_status = process_input(argv, true);
 
+	// if process_input returns a 1, there was an error in processing the input.
 	if (input_process_status) {
 		cerr << "Illegal input" << endl;
 		return 1;
 	}
 	
-	SimulationResult sr = run_simulations(load, solar, metric, days_in_chunk, number_of_chunks);
+	SimulationResult sr = run_simulations(load, solar, ev, metric, days_in_chunk, number_of_chunks);
 
 	// a temporary fix for "inf" issues.
 	// TODO: investigate later why some sr.cost == inf when B or C are low
 	
 	double cost = sr.B / kWh_in_one_cell * B_inv + sr.C * PV_inv;
-	cout << sr.B << "\t" << sr.C << "\t" << cost << endl;
+	cout << "results battery, solar, cost : "<< sr.B << "\t" << sr.C << "\t" << cost << endl;
 
 	return 0;
 }

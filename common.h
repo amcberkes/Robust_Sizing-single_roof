@@ -17,6 +17,7 @@ extern int days_in_chunk;
 
 extern vector<double> load;
 extern vector<double> solar;
+extern vector<double> ev;
 
 // define the upper and lower values to test for battery cells and pv,
 // as well as the step size of the search
@@ -36,7 +37,7 @@ int static number_of_chunks = 100;
 
 double static T_u = 1.0; // this is the time unit, representing the number of hours in each time slot of the load and solar traces
 double static kWh_in_one_cell = 0.011284;
-double static kWh_in_one_cell_ev = 0.2031;
+double static kWh_in_one_cell_ev = 0.02;
 double static num_cells_steps = 400; // search in total of n steps for cells
 double static num_pv_steps = 350; // search in total of n steps for pv
 

@@ -25,6 +25,7 @@ int days_in_chunk;
 
 vector<double> load;
 vector<double> solar;
+vector<double> ev;
 
 vector<double> read_data_from_file(istream &datafile, int limit = INT_MAX) {
 
@@ -40,7 +41,7 @@ vector<double> read_data_from_file(istream &datafile, int limit = INT_MAX) {
     string line;
     double value;
 
-    for (int i = 0; i < limit && getline(datafile, line); ++i) {
+    for (int i = 0; i < limit && getline(datafile, line); ++i) { 
     	istringstream iss(line);
     	iss >> value;
     	data.push_back(value);
@@ -202,6 +203,93 @@ int process_input(char** argv, bool process_metric_input) {
 		cerr << "error reading solar file " << solarfile << endl;
 		return 1;
 	}
+
+    //-- -- -- -- -- -- -- -- -- -- -- -read EV file here-- -- -- -- -- -- -- -- -- -- -
+    string evfile = argv[++i];
+
+#ifdef DEBUG
+    cout << "evfile = " << evfile << endl;
+#endif
+
+
+    if (evfile == string("--"))
+    {
+
+#ifdef DEBUG
+        cout << "reading ev file" << endl;
+#endif
+
+        // read from cin
+        int limit = stoi(argv[++i]);
+
+#ifdef DEBUG
+        cout << "reading ev data from stdin. limit = " << limit << endl;
+#endif
+
+       // ev = read_data_from_file(cin, limit);
+    }
+    else
+    {
+        
+
+        //ERROR must happen here
+
+        // read in data into vector
+        //ifstream evstream(evfile.c_str());
+
+        ifstream ev_file;
+        ev_file.open("analytics/synthetic_data/wfht1_2.txt");
+        //ev = read_data_from_file(evstream);
+        ev = read_data_from_file(ev_file);
+
+        
+        
+
+        // -----------------------
+        /*
+         ifstream ev_file;
+        ev_file.open("analytics/synthetic_data/wfht1_2.txt");
+        if (!ev_file.is_open())
+        {
+            cout << "error wile opening ev file" << endl;
+        }
+        else
+        {
+            cout << "successfully opened ev file" << endl;
+
+            string line;
+            for (int i = 0; i < INT_MAX && getline(ev_file, line); ++i)
+            {
+                getline(ev_file, line);
+                double value = atof(line.c_str());
+                //cerr << "VALUE = " << value << endl;
+
+                ev.push_back(value);
+            }
+
+
+        }
+
+        */
+    }
+
+#ifdef DEBUG
+    cout << "checking for errors in ev file..." << endl;
+#endif
+
+
+
+
+    if (ev[0] < 0)
+    {
+        cerr << "error reading ev file " << evfile << endl;
+        return 1;
+    }
+    /*
+    else {
+        cout << "successfully read ev file: " << ev[0] << endl;
+    }
+    */
 
     return 0;
 }
