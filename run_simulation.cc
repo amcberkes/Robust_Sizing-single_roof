@@ -27,18 +27,14 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 	// set random seed to a specific value if you want consistency in results
 	srand(10);
 
-	// get number of timeslots in each chunk
+	// get number of hours in each chunk of 100 houes
 	int t_chunk_size = chunk_size*(24/T_u);
 
 	// vector of vectors : vector of all sizing results 
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
-	// number_of_chunks = 100
-	//TODO: uncomment line below, just for debugging
-	//for (int chunk_num = 0; chunk_num < number_of_chunks; chunk_num += 1) {
-		for (int chunk_num = 0; chunk_num < 100; chunk_num += 1)
-		{
+		for (int chunk_num = 0; chunk_num < 100; chunk_num += 1){
 			cout << "-------------chunk number = " << chunk_num << endl;
 
 			// random hour of random day
@@ -50,9 +46,9 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 			int chunk_start = chunk_start_f - hour_day_sampled + one_week;
 			int chunk_end = chunk_start + t_chunk_size;
 
-			// cout << "chunk start = " << chunk_start << endl;
 			vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
 
+			//DELETE ME: just for debugging
 			for (int i = 0; i < sr.size(); i++)
 			{
 				SimulationResult s = sr.at(i);

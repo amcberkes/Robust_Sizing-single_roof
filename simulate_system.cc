@@ -272,18 +272,14 @@ void bidirectional(double ev_b, double b, double c, double d, double max_c, doub
 		if (rest_c < max_c){
 			// can fully charge stationary with the rest
 			//cout << "ev_b before update l .273: " << ev_b << endl;
-
 			ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
 			//cout << "ev_b after update: " << ev_b << endl;
-
 			b = b + rest_c * eta_c * T_u - max_d * eta_d * T_u;
 		} else{
 			// some charge is lost
 			//cout << "ev_b before update l.281: " << ev_b << endl;
-
 			ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
 			//cout << "ev_b after update: " << ev_b << endl;
-
 			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 		}
 	}
@@ -296,28 +292,22 @@ void bidirectional(double ev_b, double b, double c, double d, double max_c, doub
 			loss_events += 1;
 			load_deficit += (rest_d - max_d_ev);
 			//cout << "ev_b before update l .297: " << ev_b << endl;
-
 			ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
 			//cout << "ev_b after update: " << ev_b << endl;
-
 			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 		}
 		else{
 			// can discharge ev battery
 			//cout << "ev_b before update l. 306: " << ev_b << endl;
-
 			ev_b = ev_b - rest_d * eta_d_ev * T_u;
 			//cout << "ev_b after update: " << ev_b << endl;
-
 			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 		}
 	} else {
 		// normal behaviour : charge ev or discharge stationary
 		//cout << "ev_b before update l.315: " << ev_b << endl;
-
 		ev_b = ev_b + max_c_ev * eta_c * T_u;
 		//cout << "ev_b after update: " << ev_b << endl;
-
 		b = b - max_d * eta_d * T_u;
 	}
 }
@@ -377,9 +367,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	bool ev_at_home[24];
 	double ev_soc[24];
 	double current_ev_soc;
-
 	bool needs_charge = false;
-	
+
 	int trace_length_solar = solar_trace.size();
 	int trace_length_load = load_trace.size();
 	int trace_length_ev = ev_trace.size();
@@ -398,20 +387,17 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	int counter = 0;
 
 	loss_events = 0;
-
 	load_deficit = 0;
 	load_sum = 0;
 
 	//for each of the (100) days in the sample
 	for (int i = start_index; i < start_index + days_in_chunk; i++){
-		//for (int i = start_index; i < start_index + 20; i++){
 
 			cout << " DAY NUMBER  : " << i % start_index << endl;
 			ev_trace_index = i % start_index + counter;
 
 			// initalise arrays
-			for (int k = 0; k < 24; k++)
-			{
+			for (int k = 0; k < 24; k++){
 				ev_at_home[k] = true;
 			}
 
@@ -491,8 +477,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				// should ignore next_dept today
 				//cout << "NO TRIP TODAY ev at home: " << endl;
 
-				for (int t = 0; t < 24; t++)
-				{
+				for (int t = 0; t < 24; t++){
 					// wrap around to the start of the trace if we hit the end.
 
 					index_t_solar = t % trace_length_solar;
@@ -501,20 +486,16 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					//cout << "hour : " << t << endl;
 					//cout << "ev_soc value at time" << t << "is : " << ev_soc[t] << endl;
 					double load = load_trace[index_t_load];
-
 					next_dept = next_dept_arr[0];
 
 					//cout << "next departure is : " << next_dept << endl;
-					if (ev_soc[t] == 0 && t == 0 && i == 0)
-					{
+					if (ev_soc[t] == 0 && t == 0 && i == 0){
 						// only runs for first monday 0h : assume soc is 60% charged initially
 						ev_b = 36;
 					}
-					else
-					{
+					else{
 						//	cout << "ev_b before update l .504: " << ev_b << endl;
 						ev_b = ev_soc[t];
-						// ev_b = 30.0;
 						// cout << "ev_b after update l.509: " << ev_b << endl;
 					}
 
@@ -530,14 +511,11 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					//cout << "c value is = " << c << endl;
 					//cout << "d value is = " << d << endl;
 
-					// stationary battery parameters - to ensure that constraints are not violated
 					max_c = fmin(calc_max_charging(c, b), alpha_c);
 					max_d = fmin(calc_max_discharging(d, b), alpha_d);
 
 					//cout << "max_c value is = " << max_c << endl;
 					//cout << "max_d value is = " << max_d << endl;
-
-					// EV battery parameters - to ensure that constraints are not violated
 					max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev_goal_kWh), alpha_c_ev);
 					max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
 
@@ -553,10 +531,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					// unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
 
 					//cout << "stationary b after calling unidrectional() is = " << b << endl;
-					//cout << "ev_b after calling unidrectional() is = " << ev_b << endl;
-
-					ev_soc[t + 1] = ev_b;
-				
+					//cout << "ev_b after calling unidrectional() is = " << ev_b << endl;				
 			}
 		}
 
@@ -571,49 +546,28 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			//cout << "hour : " << t << endl;
 			//cout << "ev_soc value at time" << t << "is : " << ev_soc[t] << endl;
 			double load = load_trace[index_t_load];
-			int trips_counter = 0;
 
-			if (num_trips == 0)
-			{
-				next_dept = next_dept_arr[0];
-			} else {
-				next_dept = next_dept_arr[trips_counter];
-			}
+			int trips_counter = 0;
 			// TODO: this does not work, as we always have one next value for trips with multiple days
 			if (next_dept == t){
 				trips_counter = trips_counter + 1;
 			}
-
+			next_dept = next_dept_arr[trips_counter];
 			//cout << "next departure is : " << next_dept << endl;
-			/*
-			1) determine when EV is at home
-			2) determine when EV needs to be charged for load requirements
-			*/
-
+			
 			if (ev_at_home[t] == true){
-				//cout << "ev at home: " << endl;
-				ev_presence = true;
+				// ev is at home
 				if (ev_soc[t] == 0 && t == 0 && i == 0){
 					// only runs for first monday 0h : assume soc is 60% charged initially
 					ev_b = 36;
-				} else {
-					ev_b = ev_soc[t];
-	
 				}
-
-				//cout << "ev battery is " << ev_b << endl;
-				ev_soc[(t + 1)%24] = ev_b;
-
+				else{
+					ev_b = ev_soc[t];
+				}
+				// cout << "ev battery is " << ev_b << endl;
 				needs_charge = latest_charge(t, ev_b, next_dept);
-				//cout << "needs charge : " << needs_charge << endl;
-			} else {
-				//cout << "NO EV " << endl;
-				ev_presence = false;
-				ev_b = 0.0;
-			}
+				// cout << "needs charge : " << needs_charge << endl;
 
-			if (ev_presence){
-				// ev is at home
 				if (needs_charge){
 					// charge the EV
 					//cout << "ev needs to be charged " << endl;
@@ -621,8 +575,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					//TODO : macht die zeile sinn bei discharge?
 					d = fmax(load + 7.4 - solar_trace[index_t_solar] * pv, 0);
 				}
-				else
-				{
+				else {
 					// no need to charge the EV
 					//cout << "NO CHARGE FOR EV " << endl;
 
@@ -633,14 +586,12 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				//cout << "c value is = " << c << endl;
 				//cout << "d value is = " << d << endl;
 
-				// stationary battery parameters - to ensure that constraints are not violated
 				max_c = fmin(calc_max_charging(c, b), alpha_c);
 				max_d = fmin(calc_max_discharging(d, b), alpha_d);
 
 				//cout << "max_c value is = " << max_c << endl;
 				//cout << "max_d value is = " << max_d << endl;
 
-				// EV battery parameters - to ensure that constraints are not violated
 				max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev_goal_kWh), alpha_c_ev);
 				max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
 
@@ -661,11 +612,12 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				if (needs_charge){
 					ev_b = ev_b + 7.4;
 				}
-				ev_soc[t + 1] = ev_b;
+				ev_soc[(t + 1) % 24] = ev_b;
 			}
 			else
 			{
 				// EV NOT AT HOME
+				ev_b = 0.0;
 				c = fmax(solar_trace[index_t_solar] * pv - load, 0);
 				d = fmax(load - solar_trace[index_t_solar] * pv, 0);
 				/*
@@ -678,10 +630,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				max_d = fmin(calc_max_discharging(d, b), alpha_d);
 				b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
 				
-				// if we didnt get to discharge as much as we wanted, there is a loss: we need to use energy from grid
 				if (max_d < d){
 					loss_events += 1;
-					// amount of energy that we take from the grid:
 					load_deficit += (d - max_d);
 					//cout << "increased load deficit = " << load_deficit << endl;
 				}
@@ -705,21 +655,16 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 		cout << "RESULT LOSS" << result <<endl;
 		return result;
 	}
-
-	 loss_events = 0;
-	 load_deficit = 0;
-	 load_sum = 0;
 }
 
 // Run simulation for provides solar and load trace to find cheapest combination of
 // load and solar that can meet the epsilon target
 
-// this function is called for each sample
+// this function is called for each sample: constructs one sizing curve
 vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &solar_trace, vector<double> &ev_trace, int start_index, int end_index, double b_0)
 {
 
-	// first, find the lowest value of cells that will get us epsilon loss when the PV is maximized
-	// use binary search
+	// for Cmax, find Bmin such that system still satisfies the target performance epsilon
 	double cells_U = cells_max;
 	double cells_L = cells_min;
 	double mid_cells = 0.0;
@@ -728,15 +673,12 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 	while (cells_U - cells_L > cells_step) {
 
 		mid_cells = (cells_L + cells_U) / 2.0;
-
 		loss = sim(load_trace, solar_trace, ev_trace, start_index, end_index, mid_cells, pv_max, b_0);
 
-		//cout << "sim result with " << a2_intercept << " kWh and " << pv_max << " pv: " << loss << endl;
 		// binary search
 		if (loss > epsilon) {
 			cells_L = mid_cells;
 		} else {
-		 	// (loss <= epsilon)
 			cells_U = mid_cells;
 		}
 	}
@@ -752,26 +694,24 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 	double lowest_C = pv_max;
 
 	vector <SimulationResult> curve;
+	// first point of the sizing curve at Cmax
 	curve.push_back(SimulationResult(starting_cells*kWh_in_one_cell, lowest_feasible_pv, starting_cost));
-	//cout << "starting cells: " << starting_cells << endl;
 
 	for (double cells = starting_cells; cells <= cells_max; cells += cells_step) {
 
 		// for each value of cells, find the lowest pv that meets the epsilon loss constraint
 		double loss = 0;
 		while (true) {
-
-			// for each of the 100 samples, for each potential sizing choice, we simulte the system and determine solar and load availability
-			// simulate the system on 100*24 hours
-			// Q: what loss would we get if we had this sizing for the next 100 days corresponding to this sample of our historic traces?
-
-			cout << "-------call sim() with the following number of cells = "<< cells<<endl;
+			//cout << "-------call sim() with the following number of cells = "<< cells<<endl;
+			// compute loss of current sizing. 
 			loss = sim(load_trace, solar_trace, ev_trace, start_index, end_index, cells, lowest_feasible_pv - pv_step, b_0);
-			cout << "completed simulation with loss =  " << loss << endl;
+			//cout << "completed simulation with loss =  " << loss << endl;
 
 			if (loss < epsilon) {
+				// we can try an ev en smaller pv size, since epsilon not violated yet
 				lowest_feasible_pv -= pv_step;
 			} else {
+				// break exits the innermost loop containing it: breaks out of while loop
 				break;
 			}
 
@@ -779,7 +719,6 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 			// and can prevent loss without pv for a short time
 			if (lowest_feasible_pv <= 0) {
 				lowest_feasible_pv = 0;
-				cout << "SHIT HAPPENS"<< endl;
 				break;
 			}
 		}
@@ -788,6 +727,7 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 
 		curve.push_back(SimulationResult(cells*kWh_in_one_cell,lowest_feasible_pv, cost));
 
+// why do we need this?
 		if (cost < lowest_cost) {
 			lowest_cost = cost;
 			lowest_B = cells*kWh_in_one_cell;
@@ -796,6 +736,5 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 
 	} 
 
-	//return SimulationResult(lowest_B, lowest_C, lowest_cost);
 	return curve;
 }
