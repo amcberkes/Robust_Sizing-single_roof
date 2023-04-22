@@ -49,12 +49,15 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 			vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
 
 			//DELETE ME: just for debugging
-			for (int i = 0; i < sr.size(); i++)
-			{
-				SimulationResult s = sr.at(i);
-				 cout << "simulation result B " << s.B << endl;
-				 cout << "simulation result C " << s.C << endl;
-				 cout << "simulation result Cost " << s.cost << endl;
+			//for (int i = 0; i < sr.size(); i++)
+				for (int i = 50; i < 54; i++)
+				{
+					cout << "-------------chunk number = " << chunk_num << endl;
+
+					SimulationResult s = sr.at(i);
+					cout << "simulation result B " << s.B << endl;
+					cout << "simulation result C " << s.C << endl;
+					cout << "simulation result Cost " << s.cost << endl;
 			}
 
 			// each sr is a sizing curve that I want to print in the graph

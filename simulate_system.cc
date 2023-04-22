@@ -393,7 +393,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	//for each of the (100) days in the sample
 	for (int i = start_index; i < start_index + days_in_chunk; i++){
 
-			cout << " DAY NUMBER  : " << i % start_index << endl;
+		//	cout << " DAY NUMBER  : " << i % start_index << endl;
 			ev_trace_index = i % start_index + counter;
 
 			// initalise arrays
@@ -410,8 +410,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			int next_dept_size = sizeof(next_dept_arr) / sizeof(int);
 			// cout << "1 - length of next_dept_arr  is : " << next_dept_size << endl;
 
-			for (int j = 0; j < num_trips; j++)
-			{
+			for (int j = 0; j < num_trips; j++){
 				ev_trace_index = ev_trace_index + 1;
 				counter = counter + 1;
 				t_dept = ev_trace[ev_trace_index];
@@ -430,8 +429,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				// next departure
 				next_dept_arr[j] = t_dept;
 
-				for (int h = t_dept; h < t_arr; h++)
-				{
+				for (int h = t_dept; h < t_arr; h++){
 					ev_at_home[h] = false;
 				}
 				// initalise soc array
@@ -446,8 +444,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			// cout << "ev_trace_index is = " << ev_trace_index  << endl;
 			// cout << "next num trips that we read in = " << ev_trace[ev_trace_index_2 + pad ] << endl;
 
-			while (ev_trace[ev_trace_index_2 + pad] == 0)
-			{
+			while (ev_trace[ev_trace_index_2 + pad] == 0){
 				//cout << "on the next day there are no trips" << endl;
 				// on the next day there are no trips
 				pad = pad + 1;
@@ -472,8 +469,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 */
 			// ev is at home the whole day today
-			if (num_trips == 0)
-			{
+			if (num_trips == 0){
 				// should ignore next_dept today
 				//cout << "NO TRIP TODAY ev at home: " << endl;
 
@@ -537,7 +533,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 		// iterate through each hour to simulate charging behaviour
 		if(num_trips > 0) {
-		for (int t = 0; t < 24; t++){
+			for (int t = 0; t < 24; t++){
 			// wrap around to the start of the trace if we hit the end.
 			
 			index_t_solar = t % trace_length_solar;
@@ -643,7 +639,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 	if (metric == 0) {
 		// lolp
-		int result = loss_events / ((100) * 1.0) ;
+		double result = loss_events / ((100) * 1.0) ;
 		cout << "RESULT NUMBER OF LOSS EVENTS" << result << endl;
 		return result;
 	} else {
@@ -651,7 +647,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 		cout << "RESULT load deficit = " << load_deficit << endl;
 		cout << "RESULT total load = " << load_sum << endl;
 
-		int result = load_deficit / (load_sum * 1.0);
+		double result = load_deficit / (load_sum * 1.0);
 		cout << "RESULT LOSS" << result <<endl;
 		return result;
 	}
@@ -705,7 +701,7 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 			//cout << "-------call sim() with the following number of cells = "<< cells<<endl;
 			// compute loss of current sizing. 
 			loss = sim(load_trace, solar_trace, ev_trace, start_index, end_index, cells, lowest_feasible_pv - pv_step, b_0);
-			//cout << "completed simulation with loss =  " << loss << endl;
+			cout << "completed simulation with loss =  " << loss << endl;
 
 			if (loss < epsilon) {
 				// we can try an ev en smaller pv size, since epsilon not violated yet
