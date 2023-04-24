@@ -520,11 +520,11 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 					// call operating policy that we want
 					// giordano();
-					 bidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
+					// bidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
 
 					//cout << "stationary b before calling unidrectional() is = " << b << endl;
 
-					// unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
+					 unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
 
 					//cout << "stationary b after calling unidrectional() is = " << b << endl;
 					//cout << "ev_b after calling unidrectional() is = " << ev_b << endl;				
@@ -596,11 +596,11 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 				// call operating policy that we want
 				//giordano();
-				bidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
+				//bidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
 
 				//cout << "stationary b before calling unidrectional() is = " << b << endl;
 
-				//unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
+				unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
 
 				//cout << "stationary b after calling unidrectional() is = " << b << endl;
 				//cout << "ev_b after calling unidrectional() is = " << ev_b << endl;
