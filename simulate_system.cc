@@ -459,7 +459,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	for (int i = start_index; i < start_index + days_in_chunk; i++){
 		 day today = process_ev(i, start_index, ev_trace, counter);
 
-		if (num_trips == 0){
+		if (today.num_trips == 0){
 			// cout << "NO TRIP TODAY ev at home: " << endl;
 			for (int t = 0; t < 24; t++){
 				// wrap around to the start of the trace if we hit the end.
@@ -473,17 +473,17 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				next_dept = today.next_dept_arr[0];
 
 				// cout << "next departure is : " << next_dept << endl;
-				if (ev_soc[t] == 0 && t == 0 && i == 0){
+				if (today.ev_soc[t] == 0 && t == 0 && i == 0){
 					ev_b = 36;
 				}
 				else{
 					//	cout << "ev_b before update l .504: " << ev_b << endl;
-					ev_b = ev_soc[t];
+					ev_b = today.ev_soc[t];
 					// cout << "ev_b after update l.509: " << ev_b << endl;
 				}
 
 				// cout << "ev battery is " << ev_b << endl;
-				ev_soc[(t + 1) % 24] = ev_b;
+				today.ev_soc[(t + 1) % 24] = ev_b;
 
 				// no need to charge the EV
 
@@ -504,21 +504,23 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 		}
 
 		// iterate through each hour to simulate charging behaviour
-		if(num_trips > 0) {
-			for (int t = 0; t < 24; t++){		
-			index_t_solar = t % trace_length_solar;
-			index_t_load = t % trace_length_load;
-			load_sum += load_trace[index_t_load] ;
-			//cout << "hour : " << t << endl;
-			//cout << "ev_soc value at time" << t << "is : " << ev_soc[t] << endl;
-			double load = load_trace[index_t_load];
+		if(today.num_trips > 0) {
+			for (int t = 0; t < 24; t++){
+				int index = t + i * 24;
+				index_t_solar = index % trace_length_solar;
+				index_t_load = index % trace_length_load;
+				load_sum += load_trace[index_t_load];
+				// cout << "hour : " << t << endl;
+				// cout << "ev_soc value at time" << t << "is : " << ev_soc[t] << endl;
+				double load = load_trace[index_t_load];
 
-			int trips_counter = 0;
-			// TODO: this does not work, as we always have one next value for trips with multiple days
-			if (next_dept == t){
-				trips_counter = trips_counter + 1;
+				int trips_counter = 0;
+				// TODO: this does not work, as we always have one next value for trips with multiple days
+				if (next_dept == t)
+				{
+					trips_counter = trips_counter + 1;
 			}
-			next_dept = next_dept_arr[trips_counter];
+			next_dept = today.next_dept_arr[trips_counter];
 			//cout << "next departure is : " << next_dept << endl;
 			
 			if (ev_at_home[t] == true){
