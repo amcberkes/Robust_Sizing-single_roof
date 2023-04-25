@@ -112,10 +112,6 @@ double calc_max_discharging_ev(double power, double ev_b){
 	return 0;
 }
 
-// returns true if the ev needs to be charged at the current time step
-bool latest_charge(int hour, double current_ev_soc, int t_next_dept){
-	
-}
 
 // EV charging control 
 int naive(int t, double ev_b, int next_dept){
@@ -136,62 +132,6 @@ int mincost(int t, double ev_b, int next_dept){
 
 
 //Real Time Management
-
-/*
-void stat_prioritized(){
-	if (c > max_c)
-	{
-
-		double rest_c = c - max_c;
-		// cout << "charge ev with: " << rest_c << endl;
-		// we generated more charge than we can store in stationary battery and will store the excess charge in the ev
-		if (rest_c < max_c_ev)
-		{
-			ev_b = ev_b + rest_c * eta_c_ev * T_u;
-			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-		}
-		else
-		{
-			ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
-			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-		}
-	}
-	else if (max_d < d)
-	{
-		// we need to discharge the ev battery
-		double rest_d = d - max_d;
-		// cout << "discharge ev with: " << rest_d << endl;
-		// cout << "ev_b before discharge with: " << ev_b << endl;
-		// cout << "b before evb discharge with: " << b << endl;
-		if (rest_d > max_d_ev)
-		{
-			loss_events += 1;
-			load_deficit += (rest_d - max_d_ev);
-			ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
-			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-			// cout << "ev_b after not full discharge: " << ev_b << endl;
-		}
-		else
-		{
-			// cout << "rest_d_ev before discharge: " << rest_d << endl;
-			ev_b = ev_b - rest_d * eta_d_ev * T_u;
-			// cout << "ev_b after  full discharge: " << ev_b << endl;
-			b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-		}
-	}
-	else
-	{
-		// cout << "ev not needed, b before =  " << b << endl;
-		// cout << "only update stationary storage - before: " << b << endl;
-		b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
-		// cout << "only update stationary storage - after: " << b << endl;
-		//  cout << "ev not needed, b after =  " << b << endl;
-	}
-}
-
-*/
-
-// previously c_ev_d_b_only
 void unidirectional(bool z, double ev_b, double c, double d, double max_c, double max_d, double max_c_ev, double max_d_ev, double b){
 	//charge: 1=stationary, 2= ev, 3 = verloren
 	// discharge: 1= stationary, 2 = grid
@@ -201,7 +141,7 @@ void unidirectional(bool z, double ev_b, double c, double d, double max_c, doubl
 		} else {
 			double res = c - max_c;
 			b = b + max_c * eta_c * T_u;
-			if(res < max_c_ev){
+			if(res <= max_c_ev){
 				ev_b = ev_b + res * eta_c_ev * T_u;
 			}else{
 				ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
@@ -221,9 +161,110 @@ void unidirectional(bool z, double ev_b, double c, double d, double max_c, doubl
 	}
 }
 
-void r_degradation(bool z,double ev_b,double c,double d,double max_c,double max_d,double max_c_ev,double max_d_ev, double b);
-void min_storage(bool z,double ev_b,double c,double d,double max_c,double max_d,doube max_c_ev,double max_d_ev, double b);
-void most_sustainable(bool z, double ev_b, double c, double d, double max_c, double max_d, double max_c_ev, double max_d_ev, double b);
+void r_degradation(bool z,double ev_b,double c,double d,double max_c,double max_d,double max_c_ev,double max_d_ev, double b){
+	// charge: 1=stationary, 2= ev, 3 = verloren
+	//  discharge: 1= stationary, 2 = ev, 3= grid
+	if (c > 0){
+		if (c <= max_c){
+			b = b + c * eta_c * T_u;
+		}
+		else{
+			double res = c - max_c;
+			b = b + max_c * eta_c * T_u;
+			if (res <= max_c_ev){
+				ev_b = ev_b + res * eta_c_ev * T_u;
+			}else{
+				ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+			}
+		}
+	}
+	if (d > 0){
+		if (d <= max_d){
+			b = b - d * eta_d * T_u;
+		} else{
+			double res = d - max_d;
+			b = b - max_d * eta_d * T_u;
+			if (res <= max_d_ev){
+				ev_b = ev_b - res * eta_d_ev * T_u;
+			} else {
+				ev_b = ev_b - max_d_ev * eta_c_ev * T_u;
+				loss_events += 1;
+				double back = res - max_d_ev;
+				load_deficit += back;
+			}
+
+			
+		}
+	}
+}
+
+void min_storage(bool z,double ev_b,double c,double d,double max_c,double max_d,doube max_c_ev,double max_d_ev, double b){
+	// charge: 1=ev, 2= stationary, 3 = verloren
+	//  discharge: 1= ev, 2 = stationary, 3= grid
+	if (c > 0){
+		if (c <= max_c_ev){
+			ev_b = ev_b + c * eta_c_ev * T_u;
+		} else{
+			double res = c - max_c_ev;
+			ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+			if (res <= max_c){
+				b = b + res * eta_c * T_u;
+			}else{
+				b = b + max_c * eta_c * T_u;
+			}
+		}
+	}
+	if (d > 0){
+		if (d <= max_d_ev){
+			ev_b = ev_b - d * eta_d_ev * T_u;
+		} else{
+			double res = d - max_d_ev;
+			ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
+			if (res <= max_d){
+				b = b - res * eta_d * T_u;
+			} else{
+				b = b - max_d * eta_c * T_u;
+				loss_events += 1;
+				double back = res - max_d;
+				load_deficit += back;
+			}
+		}
+	}
+}
+
+void most_sustainable(bool z, double ev_b, double c, double d, double max_c, double max_d, double max_c_ev, double max_d_ev, double b){
+	// charge: 1=ev, 2= stationary, 3 = verloren
+	//  discharge: 1= stationary, 2 = ev, 3= grid
+	if (c > 0){
+		if (c <= max_c_ev){
+			ev_b = ev_b + c * eta_c_ev * T_u;
+		} else{
+			double res = c - max_c_ev;
+			ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+			if (res <= max_c){
+				b = b + res * eta_c * T_u;
+			} else{
+				b = b + max_c * eta_c * T_u;
+			}
+		}
+	}
+	if (d > 0){
+		if (d <= max_d){
+			b = b - d * eta_d * T_u;
+		} else{
+			double res = d - max_d;
+			b = b - max_d * eta_d * T_u;
+			if (res <= max_d_ev){
+				ev_b = ev_b - res * eta_d_ev * T_u;
+			} else{
+				ev_b = ev_b - max_d_ev * eta_c_ev * T_u;
+				loss_events += 1;
+				double back = res - max_d_ev;
+				load_deficit += back;
+			}
+		}
+	}
+}
 
 // Note: sim_year calls procedures calc_max_charging and calc_max_discharging.
 // You could potentially speed up the computation by expanding these functions into sim_year
@@ -241,12 +282,9 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	double soc_arr;
 	bool ev_at_home[24];
 	double ev_soc[24];
-	double current_ev_soc;
-	bool needs_charge = false;
 
 	int trace_length_solar = solar_trace.size();
 	int trace_length_load = load_trace.size();
-	int trace_length_ev = ev_trace.size();
 	int ev_trace_index = 0;
 
 	int next_dept;
@@ -258,7 +296,6 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	double max_d_ev = 0.0;
 	int index_t_solar;
 	int index_t_load;
-	bool ev_presence = false;
 	int counter = 0;
 	int t_charge = 0;
 	bool z = false;
