@@ -34,9 +34,8 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
-		//for (int chunk_num = 0; chunk_num < 100; chunk_num += 1){
-			for (int chunk_num = 0; chunk_num < 1; chunk_num += 1)
-			{
+		for (int chunk_num = 0; chunk_num < 100; chunk_num += 1){
+			//for (int chunk_num = 0; chunk_num < 1; chunk_num += 1){
 
 				cout << "-------------chunk number = " << chunk_num << endl;
 
@@ -52,8 +51,9 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 				vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
 
 				// DELETE ME: just for debugging
-				// for (int i = 0; i < sr.size(); i++)
-				for (int i = 50; i < 54; i++)
+				 for (int i = 0; i < sr.size(); i++)
+				
+				
 				{
 					cout << "-------------chunk number = " << chunk_num << endl;
 
@@ -62,9 +62,10 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 					cout << "simulation result C " << s.C << endl;
 					cout << "simulation result Cost " << s.cost << endl;
 			}
+			
 
-			// each sr is a sizing curve that I want to print in the graph
-			results.push_back(sr);
+				// each sr is a sizing curve that I want to print in the graph
+				results.push_back(sr);
 			}
 
 #ifdef DEBUG

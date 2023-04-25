@@ -113,23 +113,31 @@ double calc_max_discharging_ev(double power, double ev_b){
 }
 
 
-// EV charging control 
-int naive(int t, double ev_b, int next_dept){
+// EV charging control
+int naive(int t, double ev_b, int next_dept, bool no_trip){
 	return t;
 }
 
-int lastp(int t, double ev_b, int next_dept){
-	// compute pink line: ensure that ev is 80% charged when it leaves the house
-	double diff = ev_goal_kWh - ev_b;
-	int hours_needed = ceil(diff / charging_rate);
-	int latest_t = next_dept - hours_needed;
-	return latest_t;
+int lastp(int t, double ev_b, int next_dept, bool no_trip){
+	// quick fix for days with no trips, where we dont want charging
+	if(no_trip){
+		return t - 1;
+	} else {
+		double diff = ev_goal_kWh - ev_b;
+		int hours_needed = ceil(diff / charging_rate);
+		int latest_t = next_dept - hours_needed;
+		return latest_t;
+	}
+	
 }
 
-int mincost(int t, double ev_b, int next_dept){
-	return t_ch;
+int mincost(int t, double ev_b, int next_dept, bool no_trip){
+	if (no_trip){
+		return t - 1;
+	} else{
+		return t_ch;
+	}
 }
-
 
 //Real Time Management
 void unidirectional(bool z, double ev_b, double c, double d, double max_c, double max_d, double max_c_ev, double max_d_ev, double b){
@@ -299,15 +307,16 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	int counter = 0;
 	int t_charge = 0;
 	bool z = false;
+	bool no_trip = false;
 
 	loss_events = 0;
 	load_deficit = 0;
 	load_sum = 0;
 
 	//for each of the (100) days in the sample
-	//for (int i = start_index; i < start_index + days_in_chunk; i++){
-	for (int i = start_index ; i < start_index + 5; i++){
-		cout << " DAY NUMBER  : " << i % start_index << endl;
+	for (int i = start_index; i < start_index + days_in_chunk; i++){
+	//for (int i = start_index ; i < start_index + 5; i++){
+		//cout << " -----------DAY NUMBER  : " << i % start_index << endl;
 		ev_trace_index = i % start_index + counter;
 
 		for (int k = 0; k < 24; k++){
@@ -316,7 +325,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 		// ----------------------------------------------------------------read EV inputs-----------------------------------
 		num_trips = ev_trace[ev_trace_index];
-		cout << "num_trips : " << num_trips << endl;
+		//cout << "num_trips : " << num_trips << endl;
 		// next departures
 		int array_length = num_trips + 1;
 		int next_dept_arr[array_length];
@@ -327,17 +336,17 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			ev_trace_index = ev_trace_index + 1;
 			counter = counter + 1;
 			t_dept = ev_trace[ev_trace_index];
-			cout << "t_dept : " << t_dept << endl;
+			//cout << "t_dept : " << t_dept << endl;
 
 			ev_trace_index = ev_trace_index + 1;
 			counter = counter + 1;
 			t_arr = ev_trace[ev_trace_index];
-			cout << "t_arr : " << t_arr << endl;
+			//cout << "t_arr : " << t_arr << endl;
 
 			ev_trace_index = ev_trace_index + 1;
 			counter = counter + 1;
 			soc_arr = ev_trace[ev_trace_index];
-			cout << "soc_Arr : " << soc_arr << endl;
+			//cout << "soc_Arr : " << soc_arr << endl;
 
 			// next departure
 			next_dept_arr[j] = t_dept;
@@ -360,33 +369,44 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 		pad = 0;
 
 		//----------------------------------------------------------------------------------- Start hourly EMS --------------
-
+		int trips_counter = 0;
 		for(int t = 0; t<24; t++){
-			int index = t + 24*i;
+		//	cout << "---------------hour : " << t << endl;
+
+			int day = i % start_index;
+			int index = t + 24 * day + start_index;
 			index_t_solar = index % trace_length_solar;
 			index_t_load = index % trace_length_load;
 			load_sum += load_trace[index_t_load];
 			double load = load_trace[index_t_load];
 
-			int trips_counter = 0;
+			
 			if (next_dept == t){
-				trips_counter = trips_counter + 1;
+				while (trips_counter < num_trips){
+					trips_counter = trips_counter + 1;
+				}
 			}
 			next_dept = next_dept_arr[trips_counter];
+			//cout << "next departure : " << next_dept << endl;
 
-			if (ev_soc[t] == 0 && t == 0 && i == 0){
+			if(num_trips == 0){
+				no_trip = true;
+			}
+
+			if (t == 0 && day == 0){
 				// only runs for first monday 0h : assume soc is 60% charged initially
 				ev_b = 36;
 			} else{
 				ev_b = ev_soc[t];
 			}
+			//cout << "ev_b at beginning ot t : " << ev_b << endl;
 
 			//----------------------------------------------------   EV Charging Control --------------------------------
-			if (ev_at_home[t]){
-				t_charge = naive(t, ev_b, next_dept);
-				// t_charge = lastp(t, ev_b, next_dept);
-				// t_charge = mincost(t, ev_b, next_dept);
-				if(t == t_charge){
+			if (ev_at_home[t] || no_trip){
+				// t_charge = naive(t, ev_b, next_dept, no_trip);
+				t_charge = lastp(t, ev_b, next_dept, no_trip);
+				// t_charge = mincost(t, ev_b, next_dept, no_trip);
+				if (t == t_charge){
 					z = true;
 				}
 				if (z){
@@ -413,8 +433,21 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			}
 
 			//----------------------------------------------------   Real time Management ----------------------------------------
-			unidirectional(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
-			//r_degradation(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
+			//cout << "Paramas that we call unidrirectional with : "  << endl;
+			//cout << "z : " << z << endl;
+			//cout << "ev_b : " << ev_b << endl;
+			//cout << "c : " << c << endl;
+			//cout << "d : " << d << endl;
+			//cout << "max_c : " << max_c << endl;
+			//cout << "max_d : " << max_d << endl;
+			//cout << "max_c_ev : " << max_c_ev << endl;
+			//cout << "max_d_ev : " << max_d_ev << endl;
+
+			//cout << "b : " << b << endl;
+	
+
+			//unidirectional(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
+			r_degradation(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 			//min_storage(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 			//most_sustainable(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 
@@ -422,6 +455,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				ev_b = ev_b + 7.4;
 			}
 			ev_soc[(t + 1) % 24] = ev_b;
+			//cout << "ev_b after calling real time management : " << ev_b << endl;
+			//cout << "b after calling real time management : " << b << endl;
 		}
 	}
 
@@ -433,8 +468,10 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	} else {
 		// metric == 1, eue
 		//cout << "RESULT load deficit = " << load_deficit << endl;
+		//cout << "RESULT load deficsumit = " << load_sum << endl;
+
 		double result = load_deficit / (load_sum * 1.0);
-		//cout << "RESULT LOSS" << result <<endl;
+		cout << "RESULT LOSS : " << result <<endl;
 		return result;
 	}
 }
@@ -480,18 +517,19 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 	curve.push_back(SimulationResult(starting_cells*kWh_in_one_cell, lowest_feasible_pv, starting_cost));
 
 	for (double cells = starting_cells; cells <= cells_max; cells += cells_step) {
-	//for (double cells = starting_cells; cells <= starting_cells + cells_step; cells += cells_step){
 
 		// for each value of cells, find the lowest pv that meets the epsilon loss constraint
 		double loss = 0;
 		while (true)
 		{
 			//cout << "-------call sim() with the following number of cells = "<< cells<<endl;
-			// compute loss of current sizing. 
+			// compute loss of current sizing.
+			//cout << "started simulation with cells =  " << cells << endl;
+			//cout << "started simulation with pv =  " << lowest_feasible_pv - pv_step << endl;
+
 			loss = sim(load_trace, solar_trace, ev_trace, start_index, end_index, cells, lowest_feasible_pv - pv_step, b_0);
-			//remove this
-			break;
-			cout << "completed simulation with loss =  " << loss << endl;
+			
+		//	cout << "completed simulation with loss =  " << loss << endl;
 
 			if (loss < epsilon) {
 				// we can try an ev en smaller pv size, since epsilon not violated yet
@@ -520,6 +558,7 @@ vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &so
 			lowest_C = lowest_feasible_pv;
 		}
 		}
+		//cout << "RETURN CURVE OF THIS CHUNK "  << endl;
 
-	return curve;
+		return curve;
 }
