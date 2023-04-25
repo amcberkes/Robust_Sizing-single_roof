@@ -17,6 +17,17 @@ double load_sum = 0;
 double ev_b = 0.0;
 double b = 0.0;
 
+int num_trips = 0;
+int t_dept;
+int t_arr;
+double soc_arr;
+
+bool ev_at_home[24];
+double ev_soc[24];
+double current_ev_soc;
+bool needs_charge = false;
+int ev_trace_index = 0;
+
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
 
 void update_parameters(double n) {
@@ -350,6 +361,70 @@ void unidirectional(double ev_b, double b, double c, double d, double max_c, dou
 	}
 }
 
+day process_ev(int i, int start_index, vector<double> &ev_trace, int counter){
+	
+
+	//	cout << " DAY NUMBER  : " << i % start_index << endl;
+	int ev_trace_index = i % start_index + counter;
+
+	for (int k = 0; k < 24; k++){
+		ev_at_home[k] = true;
+		ev_soc[k] = 0.0;
+	}
+	num_trips = ev_trace[ev_trace_index];
+	// cout << "num_trips : " << num_trips << endl;
+	//  next departures
+	int array_length = num_trips + 1;
+	int next_dept_arr[array_length];
+	int next_dept_size = sizeof(next_dept_arr) / sizeof(int);
+	// cout << "1 - length of next_dept_arr  is : " << next_dept_size << endl;
+
+	for (int j = 0; j < num_trips; j++){
+		ev_trace_index = ev_trace_index + 1;
+		counter = counter + 1;
+		t_dept = ev_trace[ev_trace_index];
+		// cout << "t_dept : " << t_dept << endl;
+
+		ev_trace_index = ev_trace_index + 1;
+		counter = counter + 1;
+		t_arr = ev_trace[ev_trace_index];
+		// cout << "t_arr : " << t_arr << endl;
+
+		ev_trace_index = ev_trace_index + 1;
+		counter = counter + 1;
+		soc_arr = ev_trace[ev_trace_index];
+		// cout << "soc_Arr : " << soc_arr << endl;
+
+		// next departure
+		next_dept_arr[j] = t_dept;
+
+		for (int h = t_dept; h < t_arr; h++)
+		{
+			ev_at_home[h] = false;
+		}
+		// initalise soc array
+		ev_soc[t_arr] = soc_arr * 60;
+	}
+
+	// if next num_dept is 0: counts number of consecutive days with no trips
+	int pad = 0;
+	// how do I get num trips from the next day?
+	int ev_trace_index_2 = i % start_index + counter + 1;
+	// cout << "ev_trace_index is = " << ev_trace_index  << endl;
+	// cout << "next num trips that we read in = " << ev_trace[ev_trace_index_2 + pad ] << endl;
+
+	while (ev_trace[ev_trace_index_2 + pad] == 0){
+		// cout << "on the next day there are no trips" << endl;
+		//  on the next day there are no trips
+		pad = pad + 1;
+		// cout << "pad = " << pad<<endl;
+	}
+
+	next_dept_arr[num_trips] = ev_trace[ev_trace_index + 2 + pad];
+	// cout << "start to loop through hours" << endl;
+	pad = 0;
+};
+
 // Note: sim_year calls procedures calc_max_charging and calc_max_discharging.
 // You could potentially speed up the computation by expanding these functions into sim_year
 // to avoid procedure calls in this inner loop.
@@ -360,19 +435,9 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	// set the battery
 	 b = b_0*cells*kWh_in_one_cell; //0.5*a2_intercept
 	
-	int num_trips = 0;
-	int t_dept;
-	int t_arr;
-	double soc_arr;
-	bool ev_at_home[24];
-	double ev_soc[24];
-	double current_ev_soc;
-	bool needs_charge = false;
-
 	int trace_length_solar = solar_trace.size();
 	int trace_length_load = load_trace.size();
 	int trace_length_ev = ev_trace.size();
-	int ev_trace_index = 0;
 
 	int next_dept;
 	double c = 0.0;
@@ -392,150 +457,55 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 	//for each of the (100) days in the sample
 	for (int i = start_index; i < start_index + days_in_chunk; i++){
+		 day today = process_ev(i, start_index, ev_trace, counter);
 
-		//	cout << " DAY NUMBER  : " << i % start_index << endl;
-			ev_trace_index = i % start_index + counter;
+		if (num_trips == 0){
+			// cout << "NO TRIP TODAY ev at home: " << endl;
+			for (int t = 0; t < 24; t++){
+				// wrap around to the start of the trace if we hit the end.
+				int index = t+i*24;
+				index_t_solar = index % trace_length_solar;
+				index_t_load = index % trace_length_load;
+				load_sum += load_trace[index_t_load];
+				// cout << "hour : " << t << endl;
+				// cout << "ev_soc value at time" << t << "is : " << ev_soc[t] << endl;
+				double load = load_trace[index_t_load];
+				next_dept = today.next_dept_arr[0];
 
-			// initalise arrays
-			for (int k = 0; k < 24; k++){
-				ev_at_home[k] = true;
-			}
-
-			// ----------------------------------------------------------------read EV inputs-----------------------------------
-			num_trips = ev_trace[ev_trace_index];
-			//cout << "num_trips : " << num_trips << endl;
-			// next departures
-			int array_length = num_trips + 1;
-			int next_dept_arr[array_length];
-			int next_dept_size = sizeof(next_dept_arr) / sizeof(int);
-			// cout << "1 - length of next_dept_arr  is : " << next_dept_size << endl;
-
-			for (int j = 0; j < num_trips; j++){
-				ev_trace_index = ev_trace_index + 1;
-				counter = counter + 1;
-				t_dept = ev_trace[ev_trace_index];
-				//cout << "t_dept : " << t_dept << endl;
-
-				ev_trace_index = ev_trace_index + 1;
-				counter = counter + 1;
-				t_arr = ev_trace[ev_trace_index];
-				//cout << "t_arr : " << t_arr << endl;
-
-				ev_trace_index = ev_trace_index + 1;
-				counter = counter + 1;
-				soc_arr = ev_trace[ev_trace_index];
-				//cout << "soc_Arr : " << soc_arr << endl;
-
-				// next departure
-				next_dept_arr[j] = t_dept;
-
-				for (int h = t_dept; h < t_arr; h++){
-					ev_at_home[h] = false;
+				// cout << "next departure is : " << next_dept << endl;
+				if (ev_soc[t] == 0 && t == 0 && i == 0){
+					ev_b = 36;
 				}
-				// initalise soc array
-				ev_soc[t_arr] = soc_arr * 60;
-			}
-			//----------------------------------------------------------------------------------------------------------------
+				else{
+					//	cout << "ev_b before update l .504: " << ev_b << endl;
+					ev_b = ev_soc[t];
+					// cout << "ev_b after update l.509: " << ev_b << endl;
+				}
 
-			// if next num_dept is 0: counts number of consecutive days with no trips
-			int pad = 0;
-			// how do I get num trips from the next day?
-			int ev_trace_index_2 = i % start_index + counter + 1;
-			// cout << "ev_trace_index is = " << ev_trace_index  << endl;
-			// cout << "next num trips that we read in = " << ev_trace[ev_trace_index_2 + pad ] << endl;
+				// cout << "ev battery is " << ev_b << endl;
+				ev_soc[(t + 1) % 24] = ev_b;
 
-			while (ev_trace[ev_trace_index_2 + pad] == 0){
-				//cout << "on the next day there are no trips" << endl;
-				// on the next day there are no trips
-				pad = pad + 1;
-				// cout << "pad = " << pad<<endl;
-			}
+				// no need to charge the EV
 
-			next_dept_arr[num_trips] = ev_trace[ev_trace_index + 2 + pad];
-			//cout << "start to loop through hours" << endl;
-			pad = 0;
-			// DELETE ME - DEBUGGING
-			/*
-			for (int p = 0; p < 24; p++){
-				cout << "ev_at_home value at time" << p<< "is : " << ev_at_home[p] <<endl;
-				cout << "ev_soc value at time" << p << "is : " << ev_soc[p] << endl;
-			}
+				c = fmax(solar_trace[index_t_solar] * pv - load, 0);
+				d = fmax(load - solar_trace[index_t_solar] * pv, 0);
+				max_c = fmin(calc_max_charging(c, b), alpha_c);
+				max_d = fmin(calc_max_discharging(d, b), alpha_d);
+				max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev_goal_kWh), alpha_c_ev);
+				max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
 
-			cout << "length of next_dept_arr  is : " << next_dept_size << endl;
-			for (int p = 0; p < next_dept_size; p++)
-			{
-				cout << "next_dept_arr value is : " << next_dept_arr[p] << endl;
-			}
+				// call operating policy that we want
 
-*/
-			// ev is at home the whole day today
-			if (num_trips == 0){
-				// should ignore next_dept today
-				//cout << "NO TRIP TODAY ev at home: " << endl;
-
-				for (int t = 0; t < 24; t++){
-					// wrap around to the start of the trace if we hit the end.
-
-					index_t_solar = t % trace_length_solar;
-					index_t_load = t % trace_length_load;
-					load_sum += load_trace[index_t_load];
-					//cout << "hour : " << t << endl;
-					//cout << "ev_soc value at time" << t << "is : " << ev_soc[t] << endl;
-					double load = load_trace[index_t_load];
-					next_dept = next_dept_arr[0];
-
-					//cout << "next departure is : " << next_dept << endl;
-					if (ev_soc[t] == 0 && t == 0 && i == 0){
-						// only runs for first monday 0h : assume soc is 60% charged initially
-						ev_b = 36;
-					}
-					else{
-						//	cout << "ev_b before update l .504: " << ev_b << endl;
-						ev_b = ev_soc[t];
-						// cout << "ev_b after update l.509: " << ev_b << endl;
-					}
-
-					//cout << "ev battery is " << ev_b << endl;
-					ev_soc[(t + 1) % 24] = ev_b;
-
-					
-					// no need to charge the EV
-					
-					c = fmax(solar_trace[index_t_solar] * pv - load, 0);
-					d = fmax(load - solar_trace[index_t_solar] * pv, 0);
-
-					//cout << "c value is = " << c << endl;
-					//cout << "d value is = " << d << endl;
-
-					max_c = fmin(calc_max_charging(c, b), alpha_c);
-					max_d = fmin(calc_max_discharging(d, b), alpha_d);
-
-					//cout << "max_c value is = " << max_c << endl;
-					//cout << "max_d value is = " << max_d << endl;
-					max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev_goal_kWh), alpha_c_ev);
-					max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
-
-					//cout << "max_c_ev value is = " << max_c_ev << endl;
-					//cout << "max_d_ev value is = " << max_d_ev << endl;
-
-					// call operating policy that we want
-					// giordano();
-					// bidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
-
-					//cout << "stationary b before calling unidrectional() is = " << b << endl;
-
-					 unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
-
-					//cout << "stationary b after calling unidrectional() is = " << b << endl;
-					//cout << "ev_b after calling unidrectional() is = " << ev_b << endl;				
+				// cout << "stationary b before calling unidrectional() is = " << b << endl;
+				unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
+				// cout << "stationary b after calling unidrectional() is = " << b << endl;
+				// cout << "ev_b after calling unidrectional() is = " << ev_b << endl;				
 			}
 		}
 
 		// iterate through each hour to simulate charging behaviour
 		if(num_trips > 0) {
-			for (int t = 0; t < 24; t++){
-			// wrap around to the start of the trace if we hit the end.
-			
+			for (int t = 0; t < 24; t++){		
 			index_t_solar = t % trace_length_solar;
 			index_t_load = t % trace_length_load;
 			load_sum += load_trace[index_t_load] ;
@@ -556,8 +526,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				if (ev_soc[t] == 0 && t == 0 && i == 0){
 					// only runs for first monday 0h : assume soc is 60% charged initially
 					ev_b = 36;
-				}
-				else{
+				} else{
 					ev_b = ev_soc[t];
 				}
 				// cout << "ev battery is " << ev_b << endl;
@@ -565,39 +534,21 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				// cout << "needs charge : " << needs_charge << endl;
 
 				if (needs_charge){
-					// charge the EV
-					//cout << "ev needs to be charged " << endl;
 					c = fmax(solar_trace[index_t_solar] * pv - load - 7.4, 0);
-					//TODO : macht die zeile sinn bei discharge?
 					d = fmax(load + 7.4 - solar_trace[index_t_solar] * pv, 0);
 				}
 				else {
-					// no need to charge the EV
-					//cout << "NO CHARGE FOR EV " << endl;
-
 					c = fmax(solar_trace[index_t_solar] * pv - load, 0);
 					d = fmax(load - solar_trace[index_t_solar] * pv, 0);
 				}
-				
-				//cout << "c value is = " << c << endl;
-				//cout << "d value is = " << d << endl;
+			
 
 				max_c = fmin(calc_max_charging(c, b), alpha_c);
 				max_d = fmin(calc_max_discharging(d, b), alpha_d);
-
-				//cout << "max_c value is = " << max_c << endl;
-				//cout << "max_d value is = " << max_d << endl;
-
 				max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev_goal_kWh), alpha_c_ev);
 				max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
 
-				//cout << "max_c_ev value is = " << max_c_ev << endl;
-				//cout << "max_d_ev value is = " << max_d_ev << endl;
-
 				// call operating policy that we want
-				//giordano();
-				//bidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);
-
 				//cout << "stationary b before calling unidrectional() is = " << b << endl;
 
 				unidirectional(ev_b, b, c, d, max_c, max_d, max_c_ev, max_d_ev, needs_charge);

@@ -33,13 +33,18 @@ double static alpha_c_ev = 7.4; // the 1 indicates the maximum charging C-rate
 
 
 
+struct day{
+
+	int num_trips;
+	bool ev_at_home[24];
+	double ev_soc[24];
+	int next_dept_arr[];
+} ;
 
 
-
-
-	double
-	sim(vector<double> &load_trace, vector<double> &solar_trace, vector<double> &ev_trace, int start_index, int end_index,
-		double cells, double pv, double b_0);
+double
+sim(vector<double> &load_trace, vector<double> &solar_trace, vector<double> &ev_trace, int start_index, int end_index,
+	double cells, double pv, double b_0);
 
 vector<SimulationResult> simulate(vector<double> &load_trace, vector<double> &solar_trace, vector<double> &ev_trace, int start_index, int end_index,
 								  double b_0);
