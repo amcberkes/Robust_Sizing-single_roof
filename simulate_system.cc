@@ -198,7 +198,7 @@ void r_degradation(bool z,double ev_b,double c,double d,double max_c,double max_
 	}
 }
 
-void min_storage(bool z,double ev_b,double c,double d,double max_c,double max_d,doube max_c_ev,double max_d_ev, double b){
+void min_storage(bool z,double ev_b,double c,double d,double max_c,double max_d,double max_c_ev,double max_d_ev, double b){
 	// charge: 1=ev, 2= stationary, 3 = verloren
 	//  discharge: 1= ev, 2 = stationary, 3= grid
 	if (c > 0){
