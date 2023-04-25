@@ -34,22 +34,25 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
-		for (int chunk_num = 0; chunk_num < 100; chunk_num += 1){
-			cout << "-------------chunk number = " << chunk_num << endl;
+		//for (int chunk_num = 0; chunk_num < 100; chunk_num += 1){
+			for (int chunk_num = 0; chunk_num < 1; chunk_num += 1)
+			{
 
-			// random hour of random day
-			int chunk_start_f = rand() % max(solar.size(), load.size());
+				cout << "-------------chunk number = " << chunk_num << endl;
 
-			// get the weekday
-			int one_week = 168;
-			int hour_day_sampled = chunk_start_f % one_week;
-			int chunk_start = chunk_start_f - hour_day_sampled + one_week;
-			int chunk_end = chunk_start + t_chunk_size;
+				// random hour of random day
+				int chunk_start_f = rand() % max(solar.size(), load.size());
 
-			vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
+				// get the weekday
+				int one_week = 168;
+				int hour_day_sampled = chunk_start_f % one_week;
+				int chunk_start = chunk_start_f - hour_day_sampled + one_week;
+				int chunk_end = chunk_start + t_chunk_size;
 
-			//DELETE ME: just for debugging
-			//for (int i = 0; i < sr.size(); i++)
+				vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
+
+				// DELETE ME: just for debugging
+				// for (int i = 0; i < sr.size(); i++)
 				for (int i = 50; i < 54; i++)
 				{
 					cout << "-------------chunk number = " << chunk_num << endl;
@@ -62,7 +65,7 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 
 			// each sr is a sizing curve that I want to print in the graph
 			results.push_back(sr);
-		}
+			}
 
 #ifdef DEBUG
 	// print all of the curves
