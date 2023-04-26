@@ -17,6 +17,10 @@ double load_sum = 0;
 double ev_b = 0.0;
 double b = 0.0;
 double static t_ch = 3;
+bool unidirectional_p = true; 
+bool minstorage_p = false;
+bool r_degradation_p = false;
+bool most_sustainable_p = false;
 
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
 
@@ -77,12 +81,11 @@ double calc_max_discharging(double power, double b_prev) {
 
 
 //max charging function for ev battery
-double calc_max_charging_ev(double power, double ev_b, double ev_goal_kWh)
-{
+double calc_max_charging_ev(double power, double ev_b){
 	double step = power / 30.0;
 	for (double c = power; c >= 0; c -= step){
 		// 80% SOC is lower limit
-		double upper_lim = ev_goal_kWh;
+		double upper_lim = 0.8 * 60.0;
 		//cout << "ev_b before update l.84: " << ev_b << endl;
 		ev_b = ev_b + c * eta_c_ev * T_u;
 		//cout << "ev_b after update: " << ev_b << endl;
@@ -143,6 +146,7 @@ int mincost(int t, double ev_b, int next_dept, bool no_trip){
 void unidirectional(bool z, double ev_b, double c, double d, double max_c, double max_d, double max_c_ev, double max_d_ev, double b){
 	//charge: 1=stationary, 2= ev, 3 = verloren
 	// discharge: 1= stationary, 2 = grid
+	/*
 	if(c > 0){
 		if (c <= max_c){
 			b = b + c * eta_c * T_u;
@@ -166,6 +170,33 @@ void unidirectional(bool z, double ev_b, double c, double d, double max_c, doubl
 			load_deficit += res;
 		}
 
+	}*/
+
+	// rewrite it here: 2nd verison - i thought this should work
+	/*
+	if(c > 0){
+		b = b + max_c * eta_c * T_u;
+		double res = c - max_c;
+		if(res > 0){
+			max_c_ev = fmin(calc_max_charging_ev(res, ev_b, ev_goal_kWh), alpha_c_ev);
+			ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+		}
+	}
+	if( d > 0){
+		b = b - max_d * eta_d * T_u;
+		if (max_d < d){
+			loss_events += 1;
+			load_deficit += (d - max_d);
+		}
+	}
+	*/
+
+	// test
+	b = b + max_c * eta_c * T_u - max_d * eta_d * T_u;
+	if (max_d < d)
+	{
+		loss_events += 1;
+		load_deficit += (d - max_d);
 	}
 }
 
@@ -397,40 +428,258 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				// only runs for first monday 0h : assume soc is 60% charged initially
 				ev_b = 36;
 			} else{
+				//cout << "ev_b from last hour before update: " << ev_b << endl;
+
 				ev_b = ev_soc[t];
+				//cout << "ev_b from this hour after update: " << ev_b << endl;
 			}
 			//cout << "ev_b at beginning ot t : " << ev_b << endl;
 
 			//----------------------------------------------------   EV Charging Control --------------------------------
-			if (ev_at_home[t] || no_trip){
-				// t_charge = naive(t, ev_b, next_dept, no_trip);
-				t_charge = lastp(t, ev_b, next_dept, no_trip);
-				// t_charge = mincost(t, ev_b, next_dept, no_trip);
-				if (t == t_charge){
-					z = true;
+			if (ev_at_home[t] || no_trip ){
+				//if (false){
+
+					// t_charge = naive(t, ev_b, next_dept, no_trip);
+					t_charge = lastp(t, ev_b, next_dept, no_trip);
+					// t_charge = mincost(t, ev_b, next_dept, no_trip);
+					if (t == t_charge){
+						z = true;
+					}
+					if (z){
+						// cout << "charge ev at time t : " << t << endl;
+						// to prevent charging over 80% limit
+						double charge = 0.8*60 - ev_b;
+						c = fmax(solar_trace[index_t_solar] * pv - load - min(7.4, charge), 0);
+						d = fmax(load + 7.4 - solar_trace[index_t_solar] * pv, 0);
+					}else{
+						//cout << "NO charge ev at time t : " << t << endl;
+						c = fmax(solar_trace[index_t_solar] * pv - load, 0);
+						d = fmax(load - solar_trace[index_t_solar] * pv, 0);
+					}
+					//cout << "c : " << c << endl;
+					//cout << "d : " << d << endl;
+					max_c = fmin(calc_max_charging(c, b), alpha_c);
+					max_d = fmin(calc_max_discharging(d, b), alpha_d);
+					//cout << "max_c : " << max_c << endl;
+					//cout << "max_d : " << max_d << endl;
+					//cout << "b : " << b << endl;
+					//cout << "ev_b : " << ev_b << endl;
+					// glaube die beiden hier gehen nicht:
+					
+					max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
+					//cout << "max_d_ev : " << max_d_ev << endl;
+					max_c_ev = fmin(calc_max_charging_ev(c, ev_b), alpha_c_ev);
+					//cout << "max_c_ev : " << max_c_ev << endl;
+				
+
+					if (unidirectional_p)
+					{
+						if (c > 0){
+							b = b + max_c * eta_c * T_u;
+							double res = c - max_c;
+							if (res > 0){
+								max_c_ev = fmin(calc_max_charging_ev(res, ev_b), alpha_c_ev);
+								ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+							}
+						}if (d > 0){
+							b = b - max_d * eta_d * T_u;
+							if (max_d < d){
+								loss_events += 1;
+								load_deficit += (d - max_d);
+							}
+						}
+					}
+					if (minstorage_p){
+						// charge: 1=ev, 2= stationary, 3 = verloren
+						//  discharge: 1= ev, 2 = stationary, 3= grid
+						if (c > 0){
+							ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+							double res = c - max_c_ev;
+							if (res > 0){
+								max_c = fmin(calc_max_charging(res, b), alpha_c);
+								b = b + max_c * eta_c * T_u;
+							}
+						}
+						if (d > 0){
+							if(z){
+								//cannot discharge ev
+								b = b - max_d * eta_d * T_u;
+								if (max_d < d){
+									loss_events += 1;
+									load_deficit += (d - max_d);
+								}
+							}else{
+								ev_b = b - max_d_ev * eta_d_ev * T_u;
+								double res = d - max_d_ev;
+								if (res > 0)
+								{
+									max_d = fmin(calc_max_charging(res, b), alpha_d);
+									b = b - max_d * eta_c * T_u;
+								}
+								if (max_d < d)
+								{
+									loss_events += 1;
+									load_deficit += (d - max_d);
+								}
+							}
+						}
+					}
+					if (r_degradation_p){
+						// charge: 1=stationary, 2= ev, 3 = verloren
+						//  discharge: 1= stationary, 2 = ev, 3= grid
+						if (c > 0){
+							b = b + max_c * eta_c * T_u;
+							double res = c - max_c;
+							if (res > 0)
+							{
+								max_c_ev = fmin(calc_max_charging_ev(res, ev_b), alpha_c_ev);
+								ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+							}
+						}
+						if (d > 0){
+							b = b - max_d * eta_d * T_u;
+							double res = d - max_d;
+							if (res > 0 && z == false){
+								max_d_ev = fmin(calc_max_discharging_ev(res, ev_b), alpha_d_ev);
+								ev_b = ev_b - max_d_ev * eta_c_ev * T_u;
+								res = res - max_d_ev;
+							}
+							if (res > 0){
+								loss_events += 1;
+								load_deficit += (d - max_d_ev);
+							}
+						}
+					}
+					if (most_sustainable_p){
+						// charge: 1=ev, 2= stationary, 3 = verloren
+						//  discharge: 1= stationary, 2 = ev, 3= grid
+						if (c > 0){
+							ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+							double res = c - max_c_ev;
+							if (res > 0){
+								max_c = fmin(calc_max_charging(res, b), alpha_c);
+								b = b + max_c * eta_c * T_u;
+							}
+						}
+						if (d > 0){
+							b = b - max_d * eta_d * T_u;
+							double res = d - max_d;
+							if (res > 0 && z == false){
+								max_d_ev = fmin(calc_max_discharging_ev(res, ev_b), alpha_d_ev);
+								ev_b = ev_b - max_d_ev * eta_c_ev * T_u;
+								res = res - max_d_ev;
+							}
+							if (res > 0){
+								loss_events += 1;
+								load_deficit += (d - max_d_ev);
+							}
+						}
+					}
 				}
-				if (z){
-					c = fmax(solar_trace[index_t_solar] * pv - load - 7.4, 0);
-					d = fmax(load + 7.4 - solar_trace[index_t_solar] * pv, 0);
-				} else {
-					c = fmax(solar_trace[index_t_solar] * pv - load, 0);
-					d = fmax(load - solar_trace[index_t_solar] * pv, 0);
-				}
-				max_c = fmin(calc_max_charging(c, b), alpha_c);
-				max_d = fmin(calc_max_discharging(d, b), alpha_d);
-				max_c_ev = fmin(calc_max_charging_ev(c, ev_b, ev_goal_kWh), alpha_c_ev);
-				max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
-			}
+
 			else{
 				z = false;
-				ev_b = 0.0;
+				//ev_b = 0.0;
+				//cout << "ev_b while it is not at home: " << ev_b << endl;
+
 				c = fmax(solar_trace[index_t_solar] * pv - load, 0);
 				d = fmax(load - solar_trace[index_t_solar] * pv, 0);
 				max_c = fmin(calc_max_charging(c, b), alpha_c);
 				max_d = fmin(calc_max_discharging(d, b), alpha_d);
 				max_c_ev = 0.0;
 				max_d_ev = 0.0;
-			}
+
+				if(unidirectional_p){
+					if (c > 0){
+						b = b + max_c * eta_c * T_u;
+						double res = c - max_c;
+						if (res > 0){
+								max_c_ev = fmin(calc_max_charging_ev(res, ev_b), alpha_c_ev);
+								ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						}
+					}
+					if (d > 0){
+						b = b - max_d * eta_d * T_u;
+						if (max_d < d){
+							loss_events += 1;
+							load_deficit += (d - max_d);
+						}
+					}
+				}
+				if (minstorage_p){
+					// charge: 1=ev, 2= stationary, 3 = verloren
+					//  discharge: 1= ev, 2 = stationary, 3= grid
+					if (c > 0){
+						ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						double res = c - max_c_ev;
+						if (res > 0){
+							max_c = fmin(calc_max_charging(res, b), alpha_c);
+							b = b + max_c * eta_c * T_u;
+						}
+					}
+					if (d > 0){
+						ev_b = b - max_d_ev * eta_d_ev * T_u;
+						double res = d - max_d_ev;
+						if (res > 0){
+							max_d = fmin(calc_max_discharging(res, b), alpha_d);
+							b = b - max_d * eta_c * T_u;
+						}
+						if (max_d < d){
+							loss_events += 1;
+							load_deficit += (d - max_d);
+						}
+					}
+				}
+				if (r_degradation_p){
+					// charge: 1=stationary, 2= ev, 3 = verloren
+					//  discharge: 1= stationary, 2 = ev, 3= grid
+					if (c > 0){
+						b = b + max_c * eta_c * T_u;
+						double res = c - max_c;
+						if (res > 0){
+							max_c_ev = fmin(calc_max_charging_ev(res, ev_b), alpha_c_ev);
+							ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+						}
+					}
+					if (d > 0){
+						b = b - max_d * eta_d * T_u;
+						double res = d - max_d;
+						if (res > 0){
+							max_d_ev = fmin(calc_max_discharging_ev(res, ev_b), alpha_d_ev);
+							ev_b = ev_b - max_d_ev * eta_c_ev * T_u;
+						}
+						if (max_d_ev < d){
+							loss_events += 1;
+							load_deficit += (d - max_d_ev);
+						}
+					}
+					}
+				if (most_sustainable_p){
+						// charge: 1=ev, 2= stationary, 3 = verloren
+						//  discharge: 1= stationary, 2 = ev, 3= grid
+						if (c > 0){
+							ev_b = ev_b + max_c_ev * eta_c_ev * T_u;
+							double res = c - max_c_ev;
+							if (res > 0){
+								max_c = fmin(calc_max_charging(res, b), alpha_c);
+								b = b + max_c * eta_c * T_u;
+							}
+						}
+						if (d > 0){
+							b = b - max_d * eta_d * T_u;
+							double res = d - max_d;
+							if (res > 0){
+								max_d_ev = fmin(calc_max_discharging_ev(res, ev_b), alpha_d_ev);
+								ev_b = ev_b - max_d_ev * eta_c_ev * T_u;
+							}
+							if (max_d_ev < d){
+								loss_events += 1;
+								load_deficit += (d - max_d_ev);
+							}
+						}
+					}
+				}
+			
 
 			//----------------------------------------------------   Real time Management ----------------------------------------
 			//cout << "Paramas that we call unidrirectional with : "  << endl;
@@ -447,13 +696,16 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	
 
 			//unidirectional(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
-			r_degradation(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
+			//r_degradation(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 			//min_storage(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 			//most_sustainable(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 
 			if(z){
-				ev_b = ev_b + 7.4;
+				double charge = 0.8 * 60 - ev_b;
+				ev_b = ev_b + min(charge, 7.4);
 			}
+			 //cout << "ev_b before savinf it for next hour: " << ev_b << endl;
+
 			ev_soc[(t + 1) % 24] = ev_b;
 			//cout << "ev_b after calling real time management : " << ev_b << endl;
 			//cout << "b after calling real time management : " << b << endl;

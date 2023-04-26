@@ -34,39 +34,37 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 	vector <vector<SimulationResult> > results;
 
 	// get random start times and run simulation on this chunk of data
-		for (int chunk_num = 0; chunk_num < 100; chunk_num += 1){
-			//for (int chunk_num = 0; chunk_num < 1; chunk_num += 1){
+	for (int chunk_num = 0; chunk_num < number_of_chunks; chunk_num += 1){
+		// for (int chunk_num = 0; chunk_num < 1; chunk_num += 1){
 
-				cout << "-------------chunk number = " << chunk_num << endl;
+		cout << "-------------chunk number = " << chunk_num << endl;
 
-				// random hour of random day
-				int chunk_start_f = rand() % max(solar.size(), load.size());
+		// random hour of random day
+		int chunk_start_f = rand() % max(solar.size(), load.size());
 
-				// get the weekday
-				int one_week = 168;
-				int hour_day_sampled = chunk_start_f % one_week;
-				int chunk_start = chunk_start_f - hour_day_sampled + one_week;
-				int chunk_end = chunk_start + t_chunk_size;
+		// get the weekday
+		int one_week = 168;
+		int hour_day_sampled = chunk_start_f % one_week;
+		int chunk_start = chunk_start_f - hour_day_sampled + one_week;
+		int chunk_end = chunk_start + t_chunk_size;
 
-				vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
+		vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
 
-				// DELETE ME: just for debugging
-				 for (int i = 0; i < sr.size(); i++)
-				
-				
-				{
-					cout << "-------------chunk number = " << chunk_num << endl;
+		// DELETE ME: just for debugging
+		for (int i = 0; i < sr.size(); i++)
 
-					SimulationResult s = sr.at(i);
-					cout << "simulation result B " << s.B << endl;
-					cout << "simulation result C " << s.C << endl;
-					cout << "simulation result Cost " << s.cost << endl;
-			}
-			
+		{
+			cout << "-------------chunk number = " << chunk_num << endl;
 
-				// each sr is a sizing curve that I want to print in the graph
-				results.push_back(sr);
-			}
+			SimulationResult s = sr.at(i);
+			cout << "simulation result B " << s.B << endl;
+			cout << "simulation result C " << s.C << endl;
+			cout << "simulation result Cost " << s.cost << endl;
+		}
+
+		// each sr is a sizing curve that I want to print in the graph
+		results.push_back(sr);
+	}
 
 #ifdef DEBUG
 	// print all of the curves
