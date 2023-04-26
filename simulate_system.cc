@@ -17,9 +17,9 @@ double load_sum = 0;
 double ev_b = 0.0;
 double b = 0.0;
 double static t_ch = 3;
-bool unidirectional_p = true; 
+bool unidirectional_p = false; 
 bool minstorage_p = false;
-bool r_degradation_p = false;
+bool r_degradation_p = true;
 bool most_sustainable_p = false;
 
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
@@ -439,7 +439,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			if (ev_at_home[t] || no_trip ){
 				//if (false){
 
-					// t_charge = naive(t, ev_b, next_dept, no_trip);
+					//t_charge = naive(t, ev_b, next_dept, no_trip);
 					t_charge = lastp(t, ev_b, next_dept, no_trip);
 					// t_charge = mincost(t, ev_b, next_dept, no_trip);
 					if (t == t_charge){
