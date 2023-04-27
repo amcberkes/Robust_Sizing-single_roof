@@ -17,9 +17,9 @@ double load_sum = 0;
 double ev_b = 0.0;
 double b = 0.0;
 double static t_ch = 3;
-bool unidirectional_p = false; 
+bool unidirectional_p = true; 
 bool minstorage_p = false;
-bool r_degradation_p = true;
+bool r_degradation_p = false;
 bool most_sustainable_p = false;
 
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
@@ -346,10 +346,11 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 	//for each of the (100) days in the sample
 	for (int i = start_index; i < start_index + days_in_chunk; i++){
-	//for (int i = start_index ; i < start_index + 5; i++){
+	//for (int i = start_index ; i < start_index + 3; i++){
 		//cout << " -----------DAY NUMBER  : " << i % start_index << endl;
 		ev_trace_index = i % start_index + counter;
 
+		no_trip = false;
 		for (int k = 0; k < 24; k++){
 			ev_at_home[k] = true;
 		}
@@ -402,7 +403,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 		//----------------------------------------------------------------------------------- Start hourly EMS --------------
 		int trips_counter = 0;
 		for(int t = 0; t<24; t++){
-		//	cout << "---------------hour : " << t << endl;
+			//cout << "---------------hour : " << t << endl;
 
 			int day = i % start_index;
 			int index = t + 24 * day + start_index;
@@ -434,19 +435,22 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				//cout << "ev_b from this hour after update: " << ev_b << endl;
 			}
 			//cout << "ev_b at beginning ot t : " << ev_b << endl;
+			//cout << "ev__at_home array before the if branch : " << ev_at_home[t] << endl;
 
 			//----------------------------------------------------   EV Charging Control --------------------------------
 			if (ev_at_home[t] || no_trip ){
-				//if (false){
+				//if (true){
 
 					//t_charge = naive(t, ev_b, next_dept, no_trip);
 					t_charge = lastp(t, ev_b, next_dept, no_trip);
+					//cout << "t_charge is : " << t_charge << endl;
+
 					// t_charge = mincost(t, ev_b, next_dept, no_trip);
 					if (t == t_charge){
 						z = true;
 					}
-					if (z){
-						// cout << "charge ev at time t : " << t << endl;
+					if(z==true){
+						 //cout << "charge ev at time t : " << t << endl;
 						// to prevent charging over 80% limit
 						double charge = 0.8*60 - ev_b;
 						c = fmax(solar_trace[index_t_solar] * pv - load - min(7.4, charge), 0);
@@ -700,7 +704,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			//min_storage(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 			//most_sustainable(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 
-			if(z){
+			if(z==true){
 				double charge = 0.8 * 60 - ev_b;
 				ev_b = ev_b + min(charge, 7.4);
 			}

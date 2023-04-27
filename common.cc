@@ -234,11 +234,11 @@ int process_input(char** argv, bool process_metric_input) {
 
         //ERROR must happen here
 
-        // read in data into vector
+        // read in data into vectors
         //ifstream evstream(evfile.c_str());
 
         ifstream ev_file;
-        ev_file.open("analytics/synthetic_data/wfht1_2.txt");
+        ev_file.open("analytics/synthetic_data/wfht3_2.txt");
         //ev = read_data_from_file(evstream);
         ev = read_data_from_file(ev_file);
 
