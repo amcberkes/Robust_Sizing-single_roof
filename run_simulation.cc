@@ -48,6 +48,8 @@ SimulationResult run_simulations(vector<double> &load, vector<double> &solar, ve
 		int chunk_start = chunk_start_f - hour_day_sampled + one_week;
 		int chunk_end = chunk_start + t_chunk_size;
 
+		//the last parameter indicates the initial state of charge of the battery that we run each simulation with
+
 		vector<SimulationResult> sr = simulate(load, solar, ev, chunk_start, chunk_end, 0);
 
 		// DELETE ME: just for debugging
