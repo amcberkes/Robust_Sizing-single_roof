@@ -18,9 +18,9 @@ double ev_b = 0.0;
 double b = 0.0;
 double static t_ch = 3;
 bool unidirectional_p = false; 
-bool minstorage_p = true;
+bool minstorage_p = false;
 bool r_degradation_p = false;
-bool most_sustainable_p = false;
+bool most_sustainable_p = true;
 
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
 
@@ -342,9 +342,9 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 	load_sum = 0;
 
 	//for each of the (100) days in the sample
-	//for (int i = start_index; i < start_index + days_in_chunk; i++){
-	for (int i = start_index ; i < start_index + 10; i++){
-		cout << " -----------DAY NUMBER  : " << i % start_index << endl;
+	for (int i = start_index; i < start_index + days_in_chunk; i++){
+	//for (int i = start_index ; i < start_index + 10; i++){
+		//cout << " -----------DAY NUMBER  : " << i % start_index << endl;
 		ev_trace_index = i % start_index + counter;
 
 		bool no_trip = false;
@@ -354,7 +354,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 		// ----------------------------------------------------------------read EV inputs-----------------------------------
 		num_trips = ev_trace[ev_trace_index];
-		cout << "num_trips : " << num_trips << endl;
+		//cout << "num_trips : " << num_trips << endl;
 		// next departures
 		int array_length = num_trips + 1;
 		int next_dept_arr[array_length];
@@ -365,17 +365,17 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			ev_trace_index = ev_trace_index + 1;
 			counter = counter + 1;
 			t_dept = ev_trace[ev_trace_index];
-			cout << "t_dept : " << t_dept << endl;
+			//cout << "t_dept : " << t_dept << endl;
 
 			ev_trace_index = ev_trace_index + 1;
 			counter = counter + 1;
 			t_arr = ev_trace[ev_trace_index];
-			cout << "t_arr : " << t_arr << endl;
+			//cout << "t_arr : " << t_arr << endl;
 
 			ev_trace_index = ev_trace_index + 1;
 			counter = counter + 1;
 			soc_arr = ev_trace[ev_trace_index];
-			cout << "soc_Arr : " << soc_arr << endl;
+			//cout << "soc_Arr : " << soc_arr << endl;
 
 			// next departure
 			next_dept_arr[j] = t_dept;
@@ -400,7 +400,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 		//----------------------------------------------------------------------------------- Start hourly EMS --------------
 		int trips_counter = 0;
 		for(int t = 0; t<24; t++){
-			cout << "---------------hour : " << t << endl;
+			//cout << "---------------hour : " << t << endl;
 
 			int day = i % start_index;
 			int index = t + 24 * day + start_index;
@@ -416,7 +416,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				}
 			}
 			next_dept = next_dept_arr[trips_counter];
-			cout << "next departure : " << next_dept << endl;
+			//cout << "next departure : " << next_dept << endl;
 
 			if(num_trips == 0){
 				no_trip = true;
@@ -430,19 +430,19 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				ev_b = ev_soc[t];
 				//cout << "ev_b from this hour after update: " << ev_b << endl;
 			}
-			cout << "ev_b at beginning ot t : " << ev_b << endl;
+			//cout << "ev_b at beginning ot t : " << ev_b << endl;
 			//cout << "ev__at_home array before the if branch : " << ev_at_home[t] << endl;
 
 			//----------------------------------------------------   EV Charging Control --------------------------------
 			if (ev_at_home[t] || no_trip ){
 				//if (true){
-				cout << "ev_b is HOME "  << endl;
+				//cout << "ev_b is HOME "  << endl;
 
 				// t_charge = naive(t, ev_b, next_dept, no_trip);
-				t_charge = lastp(t, ev_b, next_dept, no_trip);
-				cout << "t_charge is : " << t_charge << endl;
+				//t_charge = lastp(t, ev_b, next_dept, no_trip);
+				//cout << "t_charge is : " << t_charge << endl;
 
-				// t_charge = mincost(t, ev_b, next_dept, no_trip);
+				 t_charge = mincost(t, ev_b, next_dept, no_trip);
 				if (t == t_charge){
 					z = true;
 				}
@@ -458,20 +458,20 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					c = fmax(solar_trace[index_t_solar] * pv - load, 0);
 					d = fmax(load - solar_trace[index_t_solar] * pv, 0);
 				}
-				cout << "c : " << c << endl;
-				cout << "d : " << d << endl;
+				//cout << "c : " << c << endl;
+				//cout << "d : " << d << endl;
 				max_c = fmin(calc_max_charging(c, b), alpha_c);
 				max_d = fmin(calc_max_discharging(d, b), alpha_d);
-				cout << "max_c : " << max_c << endl;
-				cout << "max_d : " << max_d << endl;
-				cout << "b : " << b << endl;
-				cout << "ev_b : " << ev_b << endl;
+				//cout << "max_c : " << max_c << endl;
+				//cout << "max_d : " << max_d << endl;
+				//cout << "b : " << b << endl;
+				//cout << "ev_b : " << ev_b << endl;
 					// glaube die beiden hier gehen nicht:
 					
 				max_d_ev = fmin(calc_max_discharging_ev(d, ev_b), alpha_d_ev);
-				cout << "max_d_ev : " << max_d_ev << endl;
+				//cout << "max_d_ev : " << max_d_ev << endl;
 				max_c_ev = fmin(calc_max_charging_ev(c, ev_b), alpha_c_ev);
-				cout << "max_c_ev : " << max_c_ev << endl;
+				//cout << "max_c_ev : " << max_c_ev << endl;
 
 				//----------------------------------------------------   Real Time management --------------------------------
 
@@ -488,8 +488,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (max_d < d){
 							loss_events += 1;
 							load_deficit += (d - max_d);
-							cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							cout << "RESULT loss events after increase = " << loss_events << endl;
+							//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							//cout << "RESULT loss events after increase = " << loss_events << endl;
 							}
 						}
 					}
@@ -585,8 +585,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (res > 0){
 							loss_events += 1;
 							load_deficit += res;
-							cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							cout << "RESULT loss events after increase = " << loss_events << endl;
+							//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							//cout << "RESULT loss events after increase = " << loss_events << endl;
 							}
 						}
 					}
@@ -603,7 +603,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			else{
 				z = false;
 				//ev_b = 0.0;
-				cout << "ev_b while it is not at home: " << ev_b << endl;
+				//cout << "ev_b while it is not at home: " << ev_b << endl;
 
 				c = fmax(solar_trace[index_t_solar] * pv - load, 0);
 				d = fmax(load - solar_trace[index_t_solar] * pv, 0);
@@ -611,11 +611,11 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				max_d = fmin(calc_max_discharging(d, b), alpha_d);
 				
 
-				cout << "c : " << c << endl;
-				cout << "d : " << d << endl;
-				cout << "max_c : " << max_c << endl;
-				cout << "max_d : " << max_d << endl;
-				cout << "b : " << b << endl;
+			//cout << "c : " << c << endl;
+			//	cout << "d : " << d << endl;
+				//cout << "max_c : " << max_c << endl;
+				//cout << "max_d : " << max_d << endl;
+				//cout << "b : " << b << endl;
 
 				if(unidirectional_p){
 					if (c > 0){
@@ -626,8 +626,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (max_d < d){
 							loss_events += 1;
 							load_deficit += (d - max_d);
-							 cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							 cout << "RESULT loss events after increase = " << loss_events << endl;
+							// cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							// cout << "RESULT loss events after increase = " << loss_events << endl;
 						}
 					}
 				}
@@ -670,16 +670,16 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (max_d < d){
 							loss_events += 1;
 							load_deficit += (d - max_d);
-							cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							cout << "RESULT loss events after increase = " << loss_events << endl;
+							//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							//cout << "RESULT loss events after increase = " << loss_events << endl;
 						}
 					}
 					}
 				}
 
 			
-			cout << "ev_b after calling real time management : " << ev_b << endl;
-			cout << "b after calling real time management : " << b << endl;
+			//cout << "ev_b after calling real time management : " << ev_b << endl;
+			//cout << "b after calling real time management : " << b << endl;
 		}
 	}
 
