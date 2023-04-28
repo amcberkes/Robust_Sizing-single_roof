@@ -472,7 +472,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				cout << "max_d_ev : " << max_d_ev << endl;
 				max_c_ev = fmin(calc_max_charging_ev(c, ev_b), alpha_c_ev);
 				cout << "max_c_ev : " << max_c_ev << endl;
-				
+
+				//----------------------------------------------------   Real Time management --------------------------------
 
 				if (unidirectional_p){
 					if (c > 0){
@@ -663,26 +664,6 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					}
 					}
 				}
-			
-
-			//----------------------------------------------------   Real time Management ----------------------------------------
-			//cout << "Paramas that we call unidrirectional with : "  << endl;
-			//cout << "z : " << z << endl;
-			//cout << "ev_b : " << ev_b << endl;
-			//cout << "c : " << c << endl;
-			//cout << "d : " << d << endl;
-			//cout << "max_c : " << max_c << endl;
-			//cout << "max_d : " << max_d << endl;
-			//cout << "max_c_ev : " << max_c_ev << endl;
-			//cout << "max_d_ev : " << max_d_ev << endl;
-
-			//cout << "b : " << b << endl;
-	
-
-			//unidirectional(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
-			//r_degradation(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
-			//min_storage(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
-			//most_sustainable(z, ev_b, c, d, max_c, max_d, max_c_ev, max_c_ev, b);
 
 			if(z==true){
 				double charge = 0.8 * 60 - ev_b;
