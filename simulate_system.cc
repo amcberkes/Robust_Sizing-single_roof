@@ -586,6 +586,14 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 							}
 						}
 					}
+
+				if (z == true){
+					double charge = 0.8 * 60 - ev_b;
+					ev_b = ev_b + min(charge, 7.4);
+				}
+				// cout << "ev_b before savinf it for next hour: " << ev_b << endl;
+				// we only update it here, when the ev battery state has changed while it was at home
+				ev_soc[(t + 1) % 24] = ev_b;
 				}
 
 			else{
@@ -665,13 +673,7 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 					}
 				}
 
-			if(z==true){
-				double charge = 0.8 * 60 - ev_b;
-				ev_b = ev_b + min(charge, 7.4);
-			}
-			 //cout << "ev_b before savinf it for next hour: " << ev_b << endl;
-
-			ev_soc[(t + 1) % 24] = ev_b;
+			
 			cout << "ev_b after calling real time management : " << ev_b << endl;
 			cout << "b after calling real time management : " << b << endl;
 		}
