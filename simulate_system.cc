@@ -17,10 +17,10 @@ double load_sum = 0;
 double ev_b = 0.0;
 double b = 0.0;
 double static t_ch = 3;
-bool unidirectional_p = true; 
+bool unidirectional_p = false; 
 bool minstorage_p = false;
 bool r_degradation_p = false;
-bool most_sustainable_p = false;
+bool most_sustainable_p = true;
 
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
 
@@ -428,6 +428,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 			if (t == 0 && day == 0){
 				// only runs for first monday 0h : assume soc is 60% charged initially
 				ev_b = 36;
+				//ev_b = 48;
+				//ev_b = 24;
 			} else{
 				//cout << "ev_b from last hour before update: " << ev_b << endl;
 				ev_b = ev_soc[t];
@@ -442,10 +444,10 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				//cout << "ev_b is HOME "  << endl;
 
 				// t_charge = naive(t, ev_b, next_dept, no_trip);
-				t_charge = lastp(t, ev_b, next_dept, no_trip);
+				//t_charge = lastp(t, ev_b, next_dept, no_trip);
 				//cout << "t_charge is : " << t_charge << endl;
 
-				// t_charge = mincost(t, ev_b, next_dept, no_trip);
+				 t_charge = mincost(t, ev_b, next_dept, no_trip);
 				if (t == t_charge){
 					z = true;
 				}
