@@ -17,10 +17,10 @@ double load_sum = 0;
 double ev_b = 0.0;
 double b = 0.0;
 double static t_ch = 3;
-bool unidirectional_p = false; 
+bool unidirectional_p = true; 
 bool minstorage_p = false;
 bool r_degradation_p = false;
-bool most_sustainable_p = true;
+bool most_sustainable_p = false;
 
 // parameters specified for an NMC cell with operating range of 1 C charging and discharging
 
@@ -322,6 +322,9 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 
 	int trace_length_solar = solar_trace.size();
 	int trace_length_load = load_trace.size();
+	//cout << "solar length"<<trace_length_solar << endl;
+	//cout << "load length" << trace_length_load << endl;
+
 	int ev_trace_index = 0;
 
 	int next_dept;
@@ -439,10 +442,10 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				//cout << "ev_b is HOME "  << endl;
 
 				// t_charge = naive(t, ev_b, next_dept, no_trip);
-				//t_charge = lastp(t, ev_b, next_dept, no_trip);
+				t_charge = lastp(t, ev_b, next_dept, no_trip);
 				//cout << "t_charge is : " << t_charge << endl;
 
-				 t_charge = mincost(t, ev_b, next_dept, no_trip);
+				// t_charge = mincost(t, ev_b, next_dept, no_trip);
 				if (t == t_charge){
 					z = true;
 				}
@@ -511,25 +514,25 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 							if (max_d < d){
 								loss_events += 1;
 								load_deficit += (d - max_d);
-								cout << "RESULT load deficit after increase = " << load_deficit << endl;
-								cout << "RESULT loss events after increase = " << loss_events << endl;
+								//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+								//cout << "RESULT loss events after increase = " << loss_events << endl;
 							}
 						}else{
 							ev_b = ev_b - max_d_ev * eta_d_ev * T_u;
 							double res = d - max_d_ev;
 							if (res > 0){
 								max_d = fmin(calc_max_discharging(res, b), alpha_d);
-								cout << "will decrease battery by = " << max_d << endl;
+								//cout << "will decrease battery by = " << max_d << endl;
 
 								b = b - max_d * eta_d * T_u;
 								res = res - max_d;
-								cout << "res is = " << res << endl;
+								//cout << "res is = " << res << endl;
 
 								if (res > 0){
 									loss_events += 1;
 									load_deficit += res;
-									cout << "RESULT load deficit after increase = " << load_deficit << endl;
-									cout << "RESULT loss events after increase = " << loss_events << endl;
+									//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+									//cout << "RESULT loss events after increase = " << loss_events << endl;
 								}
 							}
 							
@@ -558,8 +561,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (res > 0){
 							loss_events += 1;
 							load_deficit += res;
-							cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							cout << "RESULT loss events after increase = " << loss_events << endl;
+							//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							//cout << "RESULT loss events after increase = " << loss_events << endl;
 							}
 						}
 					}
@@ -641,8 +644,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (max_d < d){
 							 loss_events += 1;
 							 load_deficit += (d - max_d);
-							 cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							 cout << "RESULT loss events after increase = " << loss_events << endl;
+							 //cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							 //cout << "RESULT loss events after increase = " << loss_events << endl;
 						}
 					}
 				}
@@ -656,8 +659,8 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 						if (max_d < d){
 							loss_events += 1;
 							load_deficit += (d - max_d);
-							cout << "RESULT load deficit after increase = " << load_deficit << endl;
-							cout << "RESULT loss events after increase = " << loss_events << endl;
+							//cout << "RESULT load deficit after increase = " << load_deficit << endl;
+							//cout << "RESULT loss events after increase = " << loss_events << endl;
 						}
 					}
 					}
