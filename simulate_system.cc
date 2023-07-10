@@ -444,10 +444,10 @@ double sim(vector<double> &load_trace, vector<double> &solar_trace, vector<doubl
 				//cout << "ev_b is HOME "  << endl;
 
 				// t_charge = naive(t, ev_b, next_dept, no_trip);
-				//t_charge = lastp(t, ev_b, next_dept, no_trip);
+				t_charge = lastp(t, ev_b, next_dept, no_trip);
 				//cout << "t_charge is : " << t_charge << endl;
 
-				 t_charge = mincost(t, ev_b, next_dept, no_trip);
+				 //t_charge = mincost(t, ev_b, next_dept, no_trip);
 				if (t == t_charge){
 					z = true;
 				}

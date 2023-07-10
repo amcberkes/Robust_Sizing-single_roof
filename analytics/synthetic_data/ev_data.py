@@ -41,7 +41,7 @@ def t1_weekday():
     # arrival
     arr_t = uniform_t(dep_t + 7.0,dep_t + 10.0) 
     # SOC
-    soc = soc_arrival(0.6, 0.75)
+    soc = soc_arrival(0.65, 0.78)
     return dep_t, arr_t, soc
 
 
@@ -51,7 +51,7 @@ def t3_weekday():
     # arrival
     arr_t = uniform_t(dep_t + 1.0,dep_t + 2.0)
     # SOC
-    soc = soc_arrival(0.70, 0.75)
+    soc = soc_arrival(0.70, 0.78)
     return dep_t, arr_t, soc
 
 def tx_weekend():
@@ -60,7 +60,7 @@ def tx_weekend():
     # arrival
     arr_t = uniform_t(dep_t + 1.0,dep_t + 2.0)
     # SOC
-    soc = soc_arrival(0.5, 0.75)
+    soc = soc_arrival(0.7, 0.78)
     return dep_t, arr_t, soc
 
 ################### WFH T1 - commute to work every day #############################
@@ -112,7 +112,7 @@ def wfh_t1():
             num_trips = 1
             dep_t, arr_t, soc =  t1_weekday()
              # open file
-            with open("wfht1.txt", "a") as file:
+            with open("wfht1_v2.txt", "a") as file:
                 # set a list of lines to add:
                 lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                 # write to file and add a separator
@@ -133,7 +133,7 @@ def wfh_t2():
             num_trips = 1
             dep_t, arr_t, soc =  t1_weekday()
              # open file
-            with open("wfht2.txt", "a") as file:
+            with open("wfht2_v2.txt", "a") as file:
                 # set a list of lines to add:
                 lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                 # write to file and add a separator
@@ -143,13 +143,13 @@ def wfh_t2():
         if weekday%7 == 0 or weekday%7 == 2 or weekday%7 == 4:
             num_trips = uniform_t(0.0,1.0)
             if num_trips == 0:
-                with open("wfht2.txt", "a") as file:
+                with open("wfht2_v2.txt", "a") as file:
                     file.write(str(num_trips)+ '\n')
                 file.close()
             if num_trips == 1:
                 dep_t, arr_t, soc =  t3_weekday()
                  # open file
-                with open("wfht2.txt", "a") as file:
+                with open("wfht2_v2.txt", "a") as file:
                  # set a list of lines to add:
                     lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                   # write to file and add a separator
@@ -158,7 +158,7 @@ def wfh_t2():
             #minmum 2 trips this day
             if num_trips > 1:
                 dep_t, arr_t, soc =  t3_weekday()
-                with open("wfht2.txt", "a") as file:
+                with open("wfht2_v2.txt", "a") as file:
                     lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                     file.writelines(s + '\n' for s in lines)
 
@@ -179,13 +179,13 @@ def wfh_t2():
         if weekday%7 == 5 or weekday%7 == 6:
             num_trips = uniform_t(0.0,2.0)
             if num_trips == 0:
-                with open("wfht2.txt", "a") as file:
+                with open("wfht2_v2.txt", "a") as file:
                     file.write(str(num_trips)+ '\n')
                 file.close()
             if num_trips == 1:
                 dep_t, arr_t, soc =  tx_weekend()
                  # open file
-                with open("wfht2.txt", "a") as file:
+                with open("wfht2_v2.txt", "a") as file:
                  # set a list of lines to add:
                     lines = [str(num_trips), str(dep_t), str(arr_t), str(soc)]
                   # write to file and add a separator
@@ -193,7 +193,7 @@ def wfh_t2():
                 file.close()
             if num_trips > 1:
                 dep_t, arr_t, soc =  tx_weekend()
-                with open("wfht2.txt", "a") as file:
+                with open("wfht2_v2.txt", "a") as file:
                     lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                     file.writelines(s + '\n' for s in lines)
 
@@ -226,13 +226,13 @@ def wfh_t3():
         if weekday%7 == 5 or weekday%7 == 6: 
             num_trips = uniform_t(0.0,2.0)
             if num_trips == 0:
-                with open("wfht3.txt", "a") as file:
+                with open("wfht3_v2.txt", "a") as file:
                     file.write(str(num_trips)+ '\n')
                 file.close()
             if num_trips == 1:
                 dep_t, arr_t, soc =  tx_weekend()
                  # open file
-                with open("wfht3.txt", "a") as file:
+                with open("wfht3_v2.txt", "a") as file:
                  # set a list of lines to add:
                     lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                   # write to file and add a separator
@@ -240,7 +240,7 @@ def wfh_t3():
                 file.close()
             if num_trips > 1:
                 dep_t, arr_t, soc =  tx_weekend()
-                with open("wfht3.txt", "a") as file:
+                with open("wfht3_v2.txt", "a") as file:
                     lines = [str(num_trips),str(dep_t), str(arr_t), str(soc)]
                     file.writelines(s + '\n' for s in lines)
 
@@ -263,13 +263,13 @@ def wfh_t3():
         if weekday%7 == 0 or weekday%7 == 1 or weekday%7 == 2 or weekday%7 == 3 or weekday%7 == 4 :
             num_trips = uniform_t(0.0,1.0)
             if num_trips == 0:
-                with open("wfht3.txt", "a") as file:
+                with open("wfht3_v2.txt", "a") as file:
                     file.write(str(num_trips)+ '\n')
                 file.close()
             if num_trips == 1:
                 dep_t, arr_t, soc =  t3_weekday()
                  # open file
-                with open("wfht3.txt", "a") as file:
+                with open("wfht3_v2.txt", "a") as file:
                  # set a list of lines to add:
                     lines = [str(num_trips), str(dep_t), str(arr_t), str(soc)]
                   # write to file and add a separator
@@ -299,4 +299,4 @@ def wfh_t3():
 
 
 ################################# call whatever function you want to run 
-wfh_t1()
+wfh_t2()
